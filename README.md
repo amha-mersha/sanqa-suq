@@ -1,2 +1,2 @@
-#Sanqa Suq
-BestBuy and NewEgg inspired electronics shop. 
+# Sanqa Suq
+Best Buy and Newegg inspired electronics shop. 
