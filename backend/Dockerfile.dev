@@ -6,4 +6,4 @@ RUN go mod download
 
 COPY . .
 
-CMD ["go", "run", "-race", "cmd/sanqa-suq-srv/main.go"]
+CMD ["go", "run", "cmd/sanqa-suq-srv/main.go"]
