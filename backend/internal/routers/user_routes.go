@@ -1,8 +1,11 @@
 package routers
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/amha-mersha/sanqa-suq/internal/handlers"
+	"github.com/gin-gonic/gin"
+)
 
-func NewUserRoutes(mainRouter *gin.Engine) {
+func NewUserRoutes(mainRouter *gin.Engine, userHandler *handlers.UserHandler) {
 	userRoute := mainRouter.Group("/user")
 
 	/*
@@ -10,7 +13,7 @@ func NewUserRoutes(mainRouter *gin.Engine) {
 		Data: { email, password, first_name, last_name, phone }
 		Response: { user_id, email, role }
 	*/
-	userRoute.POST("/register", UserRegister)
+	userRoute.POST("/register", userHandler.UserRegister)
 
 	/*
 		POST /api/users/login
