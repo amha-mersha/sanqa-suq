@@ -19,10 +19,15 @@ func NewUserHandler(service *services.UserService) *UserHandler {
 func (h *UserHandler) UserRegister(ctx *gin.Context) {
 	var userRegisterDTO dtos.UserRegisterDTO
 	if err := ctx.ShouldBindBodyWithJSON(&userRegisterDTO); err != nil {
-		ctx.JSON(http.StatusBadRequest, NewResponseJsonStruct(StatusError, "INVALID_USER_DATA", err, nil))
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "INVALID_REQUEST_BODY", "details": err.Error()})
+		return
 	}
-
-	err := h.service.RegisterUser(ctx, userRegisterDTO)
+	err := h.service.RegisterUser(&userRegisterDTO)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	ctx.JSON(http.StatusCreated, gin.H{"message": "USER_REGISTERED_SUCCESSFULLY"})
 }
 func (h *UserHandler) UserLogin(ctx *gin.Context)   {}
 func (h *UserHandler) UpdateUser(ctx *gin.Context)  {}

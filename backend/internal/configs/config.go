@@ -11,6 +11,7 @@ import (
 type Config struct {
 	DatabaseUrl string
 	Port        int
+	Version     string
 }
 
 func LoadConfig(envFile string) (*Config, error) {
@@ -33,6 +34,12 @@ func LoadConfig(envFile string) (*Config, error) {
 		return nil, fmt.Errorf("DATABASE_URL is not set")
 	} else {
 		cfg.DatabaseUrl = os.Getenv("DATABASE_URL")
+	}
+
+	if os.Getenv("API_VERSION") == "" {
+		cfg.Version = "v1"
+	} else {
+		cfg.Version = os.Getenv("API_VERSION")
 	}
 	return cfg, nil
 }

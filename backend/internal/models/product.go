@@ -5,7 +5,7 @@ import "time"
 type Categories struct {
 	CategoryID       int    `json:"category_id"`
 	Name             string `json:"name"`
-	ParentCategoryID int    `json:"parent_category_id"`
+	ParentCategoryID *int   `json:"parent_category_id"`
 }
 
 type Brands struct {

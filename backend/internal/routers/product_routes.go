@@ -5,8 +5,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewProductRoutes(mainRouter *gin.Engine, productHanlder *handlers.ProductHandler) {
-	productRoute := mainRouter.Group("/products")
+func NewProductRoutes(mainRouter *gin.RouterGroup, productHanlder *handlers.ProductHandler) {
+	productRoute := mainRouter.Group("/product")
 
 	productRoute.POST("/add", productHanlder.AddNewProduct)
 	productRoute.PUT("/update:id", productHanlder.UpdateProduct)

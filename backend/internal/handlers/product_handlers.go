@@ -20,15 +20,15 @@ func NewProductHandler(service *services.ProductService) *ProductHandler {
 func (handler *ProductHandler) AddNewProduct(ctx *gin.Context) {
 	var productCreationDTO dtos.CreateProductDTO
 	if err := ctx.ShouldBindBodyWithJSON(&productCreationDTO); err != nil {
-		ctx.JSON(http.StatusBadRequest, NewResponseJsonStruct(StatusError, "INVALID_PRODUCT_DATA", err, nil))
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "INVALID_PRODUCT_STRUCT"})
 		return
 	}
 	err := handler.service.AddNewProduct(ctx, &productCreationDTO)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, NewResponseJsonStruct(StatusError, "FAILED_TO_ADD_PRODUCT", err, nil))
+		ctx.Error(err)
 		return
 	}
-	ctx.JSON(http.StatusCreated, NewResponseJsonStruct(StatusSuccess, "PRODUCT_ADDED_SUCCESSFULLY", nil, nil))
+	ctx.JSON(http.StatusCreated, gin.H{"error": "PRODUCT_ADDED_SUCCESSFULLY"})
 }
 
 func (handler *ProductHandler) RemoveProduct(ctx *gin.Context) {

@@ -40,7 +40,7 @@ CREATE TABLE addresses (
 -- 3. Categories Table
 CREATE TABLE categories (
     category_id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
+    category_name VARCHAR(100) NOT NULL,
     parent_category_id INTEGER REFERENCES categories(category_id) ON DELETE SET NULL
 );
 
