@@ -8,5 +8,7 @@ import (
 func NewProductRoutes(mainRouter *gin.Engine, productHanlder *handlers.ProductHandler) {
 	productRoute := mainRouter.Group("/products")
 
-	productRoute.POST("/add", ProductHandler.)
+	productRoute.POST("/add", productHanlder.AddNewProduct)
+	productRoute.PUT("/update:id", productHanlder.UpdateProduct)
+	productRoute.DELETE("/remove:id", productHanlder.RemoveProduct)
 }

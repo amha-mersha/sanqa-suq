@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/amha-mersha/sanqa-suq/internal/handlers/dtos"
+	"github.com/amha-mersha/sanqa-suq/internal/dtos"
 	"github.com/amha-mersha/sanqa-suq/internal/services"
 	"github.com/gin-gonic/gin"
 )
@@ -19,7 +19,7 @@ func NewUserHandler(service *services.UserService) *UserHandler {
 func (h *UserHandler) UserRegister(ctx *gin.Context) {
 	var userRegisterDTO dtos.UserRegisterDTO
 	if err := ctx.ShouldBindBodyWithJSON(&userRegisterDTO); err != nil {
-		ctx.JSON(http.StatusBadRequest, NewResponseJsonStruct(StatusError, "invalid user data", err, nil))
+		ctx.JSON(http.StatusBadRequest, NewResponseJsonStruct(StatusError, "INVALID_USER_DATA", err, nil))
 	}
 
 	err := h.service.RegisterUser(ctx, userRegisterDTO)
