@@ -2,11 +2,13 @@ package routers
 
 import (
 	"github.com/amha-mersha/sanqa-suq/internal/handlers"
+	"github.com/amha-mersha/sanqa-suq/internal/middlewares"
 	"github.com/gin-gonic/gin"
 )
 
-func NewUserRoutes(mainRouter *gin.Engine, userHandler *handlers.UserHandler) {
+func NewUserRoutes(mainRouter *gin.RouterGroup, userHandler *handlers.UserHandler, middleware *middlewares.AuthMiddleware) {
 	userRoute := mainRouter.Group("/user")
+	userRoute.Use(middleware.AuthMiddleware())
 
 	/*
 		POST /api/users/register
@@ -20,25 +22,18 @@ func NewUserRoutes(mainRouter *gin.Engine, userHandler *handlers.UserHandler) {
 		Data: { email, password }
 		Response: { token }
 	*/
-	userRoute.POST("/login", UserLogin)
-
-	/*
-		POST /api/users/oauth/google
-		Data: { google_token }
-		Response: { user_id, email, token }
-	*/
-	userRoute.POST("oauth/google", UserLogin)
+	userRoute.POST("/login", userHandler.UserLogin)
 
 	/*
 		GET /api/users/:user_id
 		Response: { user_id, email, first_name, last_name, phone, role }
 	*/
-	userRoute.GET("users/:user_id", GetUserById)
+	userRoute.GET("users/:user_id", userHandler.GetUserById)
 
 	/*
 		PUT /api/users/:user_id
 		Data: { first_name, last_name, phone }
 		Response: { user_id, updated_fields }
 	*/
-	userRoute.POST("users/:user_id", UpdateUser)
+	userRoute.POST("users/:user_id", userHandler.UpdateUser)
 }

@@ -3,9 +3,11 @@ package repositories
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
-	"github.com/amha-mersha/sanqa-suq/internal"
 	"github.com/amha-mersha/sanqa-suq/internal/database"
+	errs "github.com/amha-mersha/sanqa-suq/internal/errors"
 	"github.com/amha-mersha/sanqa-suq/internal/models"
 	"github.com/jackc/pgx/v4"
 )
@@ -36,9 +38,9 @@ func (r *UserRepository) FindUserByID(ctx context.Context, userId string) (*mode
 		&user.CreatedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, internal.NotFound("User not found", err)
+			return nil, errs.NotFound("User not found", err)
 		}
-		return nil, internal.InternalError("Failed to scan user", err)
+		return nil, errs.InternalError("Failed to scan user", err)
 	}
 	return &user, nil
 }
@@ -58,9 +60,9 @@ func (r *UserRepository) FindUserByEmail(ctx context.Context, email string) (*mo
 		&user.CreatedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, internal.NotFound("USER_NOT_FOUND", err)
+			return nil, errs.NotFound("USER_NOT_FOUND", err)
 		}
-		return nil, internal.InternalError("FAILED_TO_SCAN_USER", err)
+		return nil, errs.InternalError("FAILED_TO_SCAN_USER", err)
 	}
 	return &user, nil
 }
@@ -78,7 +80,28 @@ func (r *UserRepository) InsertUser(ctx context.Context, user *models.User) erro
 		user.Provider,
 		user.ProviderID).Scan(&user.ID)
 	if err != nil {
-		return internal.InternalError("Failed to insert user", err)
+		return errs.InternalError("Failed to insert user", err)
+	}
+	return nil
+}
+
+func (r *UserRepository) UpdateUser(ctx context.Context, userId string, updateFields map[string]interface{}) error {
+	setClauses := []string{}
+	values := []interface{}{}
+	i := 1
+	for field, value := range updateFields {
+		setClauses = append(setClauses, field+" = $"+string(i))
+		values = append(values, value)
+		i++
+	}
+	values = append(values, userId)
+	query := fmt.Sprintf("UPDATE users SET %s WHERE user_id = $%d", strings.Join(setClauses, ", "), i)
+	_, err := r.DB.Pool.Exec(ctx, query, values...)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return errs.NotFound("User not found", err)
+		}
+		return errs.InternalError("Failed to update user", err)
 	}
 	return nil
 }

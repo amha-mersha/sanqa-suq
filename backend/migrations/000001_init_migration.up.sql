@@ -2,7 +2,7 @@
 -- Database: PostgreSQL
 
 BEGIN;
-
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Create ENUM types
 CREATE TYPE user_role AS ENUM ('customer', 'admin');
 CREATE TYPE address_type AS ENUM ('shipping', 'billing');
@@ -77,9 +77,11 @@ CREATE TABLE product_specifications (
 -- 7. Compatibility_Rules Table
 CREATE TABLE compatibility_rules (
     product_id INTEGER NOT NULL REFERENCES products(product_id) ON DELETE CASCADE,
-    spec_id INTEGER NOT NULL REFERENCES product_specifications(product_id, spec_name) ON DELETE CASCADE,
+    spec_id INTEGER NOT NULL,
+    spec_name VARCHAR(100) NOT NULL,
     spec_value VARCHAR(255) NOT NULL,
-    PRIMARY KEY (product_id, spec_id, spec_value)
+    PRIMARY KEY (product_id, spec_id, spec_value),
+    FOREIGN KEY (spec_id, spec_name) REFERENCES product_specifications(product_id, spec_name) ON DELETE CASCADE
 );
 
 -- 8. Custom_Builds Table
@@ -187,7 +189,7 @@ CREATE INDEX idx_addresses_user_id ON addresses(user_id);
 CREATE INDEX idx_products_category_id ON products(category_id);
 CREATE INDEX idx_products_brand_id ON products(category_id, brand_id);
 CREATE INDEX idx_product_specifications_product_id ON product_specifications(product_id);
-CREATE INDEX idx_compatibility_rules_product_ids ON compatibility_rules(product_id_1, product_id_2);
+CREATE INDEX idx_compatibility_rules_product_ids ON compatibility_rules(product_id);
 CREATE INDEX idx_custom_builds_user_id ON custom_builds(user_id);
 CREATE INDEX idx_build_items_build_id ON build_items(build_id);
 CREATE INDEX idx_orders_user_id ON orders(user_id);

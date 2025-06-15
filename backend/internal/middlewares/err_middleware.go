@@ -1,8 +1,9 @@
-package internal
+package middlewares
 
 import (
 	"net/http"
 
+	"github.com/amha-mersha/sanqa-suq/internal/errors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,7 +13,7 @@ func ErrorHandler() gin.HandlerFunc {
 		if len(c.Errors) > 0 {
 			err := c.Errors.Last().Err
 
-			if appErr, ok := err.(*AppError); ok {
+			if appErr, ok := err.(*errors.AppError); ok {
 				c.JSON(appErr.StatusCode, gin.H{
 					"error": appErr.Message,
 					"code":  appErr.Code,
@@ -20,7 +21,6 @@ func ErrorHandler() gin.HandlerFunc {
 				return
 			}
 
-			// Unknown/internal error fallback
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "Internal server error",
 			})

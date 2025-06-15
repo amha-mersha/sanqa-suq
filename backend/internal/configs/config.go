@@ -12,6 +12,8 @@ type Config struct {
 	DatabaseUrl string
 	Port        int
 	Version     string
+	JWTSecret   string
+	JWTIssuer   string
 }
 
 func LoadConfig(envFile string) (*Config, error) {
@@ -41,5 +43,18 @@ func LoadConfig(envFile string) (*Config, error) {
 	} else {
 		cfg.Version = os.Getenv("API_VERSION")
 	}
+	if os.Getenv("JWT_SECRET") == "" {
+		return nil, fmt.Errorf("JWT_SECRET is not set")
+	} else {
+		cfg.JWTSecret = os.Getenv("JWT_SECRET")
+	}
+
+	if os.Getenv("JWT_ISSUER") == "" {
+		cfg.JWTIssuer = "sanqa-suq"
+	} else {
+		cfg.JWTIssuer = os.Getenv("JWT_ISSUER")
+	}
+
 	return cfg, nil
+
 }
