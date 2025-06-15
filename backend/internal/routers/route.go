@@ -19,6 +19,7 @@ func NewRoute(config *configs.Config, rtr *gin.Engine) error {
 		return err
 	}
 	apiRouter := rtr.Group(fmt.Sprintf("/api/%s/", config.Version))
+	apiRouter.Use(middlewares.ErrorHandler())
 	apiRouter.GET("health", handlers.HealthCheckHandler)
 	apiRouter.GET("ping", handlers.HealthPingHandler)
 

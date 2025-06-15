@@ -2,10 +2,9 @@ package services
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
 	"github.com/amha-mersha/sanqa-suq/internal/dtos"
+	errs "github.com/amha-mersha/sanqa-suq/internal/errors"
 	"github.com/amha-mersha/sanqa-suq/internal/repositories"
 )
 
@@ -19,16 +18,16 @@ func NewProductService(repository *repositories.ProductRepository) *ProductServi
 
 func (service *ProductService) AddNewProduct(ctx context.Context, productCreationDTO *dtos.CreateProductDTO) error {
 	if productCreationDTO.Name == "" {
-		return errors.New("PRODUCT_NAME_REQUIRED")
+		return errs.BadRequest("PRODUCT_NAME_REQUIRED", nil)
 	}
 	if productCreationDTO.Price < 0 {
-		return errors.New("PRODUCT_PRICE_INVALID")
+		return errs.BadRequest("PRODUCT_PRICE_INVALID", nil)
 	}
 	if productCreationDTO.StockQuantity < 0 {
-		return errors.New("PRODUCT_QUANTITY_INVALID")
+		return errs.BadRequest("PRODUCT_STOCK_QUANTITY_INVALID", nil)
 	}
 	if productCreationDTO.Description == "" {
-		return errors.New("PRODUCT_DESCRIPTION_REQUIRED")
+		return errs.BadRequest("PRODUCT_DESCRIPTION_REQUIRED", nil)
 	}
 	if err := service.repository.InsertNewProduct(ctx, productCreationDTO); err != nil {
 		return err
@@ -38,7 +37,7 @@ func (service *ProductService) AddNewProduct(ctx context.Context, productCreatio
 
 func (service *ProductService) RemoveProduct(ctx context.Context, productId int) error {
 	if productId < 0 {
-		return errors.New("INVALID_PRODUCT_ID")
+		return errs.BadRequest("INVALID_PRODUCT_ID", nil)
 	}
 	return service.RemoveProduct(ctx, productId)
 }
@@ -60,13 +59,13 @@ func (service *ProductService) UpdateProduct(ctx context.Context, productId int,
 	}
 	if dto.Price != nil {
 		if *dto.Price < 0 {
-			return fmt.Errorf("INVALID_PRICE")
+			return errs.BadRequest("INVALID_PRICE", nil)
 		}
 		updateFields["price"] = *dto.Price
 	}
 	if dto.StockQuantity != nil {
 		if *dto.StockQuantity < 0 {
-			return fmt.Errorf("INVALID_STOCKQUANTITY")
+			return errs.BadRequest("INVALID_STOCK_QUANTITY", nil)
 		}
 		updateFields["stock_quantity"] = *dto.StockQuantity
 	}

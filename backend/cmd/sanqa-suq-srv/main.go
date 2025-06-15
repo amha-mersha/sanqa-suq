@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	configs, errConfig := configs.LoadConfig("../../.env")
+	configs, errConfig := configs.LoadConfig(".env")
 	if errConfig != nil {
 		log.Fatal(errConfig)
 	}

@@ -1,0 +1,20 @@
+meta {
+  name: Create New Category
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{categories_url}}
+  body: json
+  auth: inherit
+}
+
+body:json {
+  // CreateCategoryDTO - valid example with parent
+  {
+    "name": "Laptops",
+    "parent_category_id": 1
+  }
+  
+}

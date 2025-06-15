@@ -1,10 +1,10 @@
-package internal
+package utils
 
 import (
 	"regexp"
 	"unicode"
 
-	"github.com/amha-mersha/sanqa-suq/internal"
+	errs "github.com/amha-mersha/sanqa-suq/internal/errors"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -46,14 +46,11 @@ func ValidatePhoneNumber(phone string) bool {
 func HashPassword(password string) (string, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return "", internal.InternalError("FAILED_TO_HASH_PASSWORD", err)
+		return "", errs.InternalError("FAILED_TO_HASH_PASSWORD", err)
 	}
 	return string(hashedPassword), nil
 }
 func ComparePasswords(hashedPassword, password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
-	if err != nil {
-		return false
-	}
-	return true
+	return err != nil
 }

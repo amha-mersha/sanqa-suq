@@ -1,3 +1,7 @@
 vars {
-  base_url: localhost:8080
+  root_url: http://localhost:8080
+  base_url: {{root_url}}/api/v1
+  product_url: {{base_url}}/product
+  categories_url: {{base_url}}/categories
+  user_url: {{base_url}}/user
 }

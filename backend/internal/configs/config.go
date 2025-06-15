@@ -23,19 +23,19 @@ func LoadConfig(envFile string) (*Config, error) {
 	}
 
 	cfg := &Config{}
-	if os.Getenv("PORT") == "" {
+	if os.Getenv("APP_PORT") == "" {
 		cfg.Port = 8080
 	} else {
-		port, errPars := strconv.Atoi(os.Getenv("PORT"))
+		port, errPars := strconv.Atoi(os.Getenv("APP_PORT"))
 		if errPars != nil {
 			return nil, fmt.Errorf("failed to parse PORT: %w", errPars)
 		}
 		cfg.Port = port
 	}
-	if os.Getenv("DATABASE_URL") == "" {
-		return nil, fmt.Errorf("DATABASE_URL is not set")
+	if os.Getenv("POSTGRES_URL") == "" {
+		return nil, fmt.Errorf("POSTGRES_URL is not set")
 	} else {
-		cfg.DatabaseUrl = os.Getenv("DATABASE_URL")
+		cfg.DatabaseUrl = os.Getenv("POSTGRES_URL")
 	}
 
 	if os.Getenv("API_VERSION") == "" {

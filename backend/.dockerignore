@@ -1,5 +1,5 @@
-.env
 tmp/
 .air.toml
 .git
 ./api-testing
+README.md

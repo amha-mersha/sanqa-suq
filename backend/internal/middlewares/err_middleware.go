@@ -3,7 +3,7 @@ package middlewares
 import (
 	"net/http"
 
-	"github.com/amha-mersha/sanqa-suq/internal/errors"
+	errs "github.com/amha-mersha/sanqa-suq/internal/errors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -13,7 +13,7 @@ func ErrorHandler() gin.HandlerFunc {
 		if len(c.Errors) > 0 {
 			err := c.Errors.Last().Err
 
-			if appErr, ok := err.(*errors.AppError); ok {
+			if appErr, ok := err.(*errs.AppError); ok {
 				c.JSON(appErr.StatusCode, gin.H{
 					"error": appErr.Message,
 					"code":  appErr.Code,

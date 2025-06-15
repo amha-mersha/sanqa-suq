@@ -5,7 +5,7 @@ Sanqa Suq is a Go REST API for an e-commerce platform, handling users, products,
 ## Quick Start
 1. **Clone the Repository**:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/amha-mersha/sanqa-suq.git
    cd sanqa-suq
    ```
 
@@ -39,14 +39,14 @@ Sanqa Suq is a Go REST API for an e-commerce platform, handling users, products,
    ```bash
    air
    ```
-   API available at `http://localhost:8080/v1`.
+   API available at `http://localhost:8080/api/v1`.
 
 ### Docker Compose
 1. Start the app and PostgreSQL:
    ```bash
    docker-compose up --build
    ```
-   API available at `http://localhost:8080/v1`. Migrations are applied automatically on container startup.
+   API available at `http://localhost:8080/api/v1`. Migrations are applied automatically on container startup.
 
 ### Makefile
 - Run locally:
@@ -78,7 +78,7 @@ Uses `go-migrate` for database schema changes. Migrations are applied automatica
 1. Install Bruno: https://www.usebruno.com/
 2. Open `api-testing-sanqasuq` folder in Bruno.
 3. Use `Development.bru` environment for local testing.
-4. Run `home_page.bru` collection to test endpoints.
+4. Run collections to test endpoints.
 
 ## Development Tools
 - **Air**: Hot reloading (configured via `.air.toml`). Install:

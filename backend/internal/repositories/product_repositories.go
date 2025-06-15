@@ -8,7 +8,9 @@ import (
 
 	"github.com/amha-mersha/sanqa-suq/internal/database"
 	"github.com/amha-mersha/sanqa-suq/internal/dtos"
+	errs "github.com/amha-mersha/sanqa-suq/internal/errors"
 	"github.com/amha-mersha/sanqa-suq/internal/models"
+	"github.com/jackc/pgx/v5"
 )
 
 type ProductRepository struct {
@@ -24,7 +26,10 @@ func (repository *ProductRepository) FindCategoryByID(ctx context.Context, categ
 	query := `SELECT category_id,name, parent_category_id  FROM	categories c WHERE c.category_id = $1`
 	err := repository.DB.Pool.QueryRow(ctx, query, categoryId).Scan(&category.CategoryID, &category.Name, &category.ParentCategoryID)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errs.NotFound(fmt.Sprintf("category with id %d not found", categoryId), err)
+		}
+		return nil, errs.InternalError(fmt.Sprintf("failed to find category with id %d", categoryId), err)
 	}
 	return &category, nil
 }
@@ -34,7 +39,10 @@ func (repository *ProductRepository) FindBrandByID(ctx context.Context, brandId 
 	query := `SELECT brand_id,name, description FROM brands b WHERE b.brand_id = $1`
 	err := repository.DB.Pool.QueryRow(ctx, query, brandId).Scan(&brand.BrandID, &brand.Name, &brand.Description)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errs.NotFound(fmt.Sprintf("brand with id %d not found", brandId), err)
+		}
+		return nil, errs.InternalError(fmt.Sprintf("failed to find brand with id %d", brandId), err)
 	}
 	return &brand, nil
 }
@@ -44,7 +52,10 @@ func (repository *ProductRepository) FindProductByID(ctx context.Context, id int
 	var product models.Products
 	err := repository.DB.Pool.QueryRow(ctx, query, id).Scan(&product.ProductID, &product.CategoryID, &product.BrandID, &product.Name, &product.Description, &product.Price, &product.StockQuantity)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errs.NotFound(fmt.Sprintf("product with id %d not found", id), err)
+		}
+		return nil, errs.InternalError(fmt.Sprintf("failed to find product with id %d", id), err)
 	}
 	return &product, nil
 }
@@ -52,7 +63,10 @@ func (repository *ProductRepository) FindProductByID(ctx context.Context, id int
 func (repository *ProductRepository) InsertNewProduct(ctx context.Context, product *dtos.CreateProductDTO) error {
 	query := `INSERT INTO products (category_id, brand_id, name, description, price, stock_quantity) VALUES ($1, $2, $3, $4, $5, $6)`
 	_, err := repository.DB.Pool.Exec(ctx, query, product.CategoryID, product.BrandID, product.Name, product.Description, product.Price, product.StockQuantity)
-	return err
+	if err != nil {
+		return errs.InternalError("failed to insert new product", err)
+	}
+	return nil
 }
 
 func (repository *ProductRepository) DeleteProductByID(ctx context.Context, productID int) error {
@@ -60,19 +74,23 @@ func (repository *ProductRepository) DeleteProductByID(ctx context.Context, prod
 	result, err := repository.DB.Pool.Exec(ctx, query, productID)
 	if err != nil {
 		if result.RowsAffected() == 0 {
-			return errors.New("PRODUCT_NOT_FOUND")
+			return errs.NotFound(fmt.Sprintf("product with id %d not found", productID), err)
 		}
+		if errors.Is(err, pgx.ErrNoRows) {
+			return errs.NotFound(fmt.Sprintf("product with id %d not found", productID), err)
+		}
+		return errs.InternalError(fmt.Sprintf("failed to delete product with id %d", productID), err)
 	}
-	return err
+	return nil
 }
 
-func (repository *ProductRepository) UpdateProduct(ctx context.Context, productId int, fields map[string]interface{}) error {
+func (repository *ProductRepository) UpdateProduct(ctx context.Context, productId int, fields map[string]any) error {
 	if len(fields) == 0 {
 		return nil
 	}
 
 	setClauses := []string{}
-	args := []interface{}{}
+	args := []any{}
 	i := 1
 
 	for col, val := range fields {
@@ -86,10 +104,13 @@ func (repository *ProductRepository) UpdateProduct(ctx context.Context, productI
 
 	cmdTag, err := repository.DB.Pool.Exec(ctx, query, args...)
 	if err != nil {
-		return err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return errs.NotFound(fmt.Sprintf("product with id %d not found", productId), err)
+		}
+		return errs.InternalError(fmt.Sprintf("failed to update product with id %d", productId), err)
 	}
 	if cmdTag.RowsAffected() == 0 {
-		return fmt.Errorf("PRODUCT_WITH_ID_%d_NOT_FOUND", productId)
+		return errs.NotFound(fmt.Sprintf("product with id %d not found", productId), nil)
 	}
 
 	return nil

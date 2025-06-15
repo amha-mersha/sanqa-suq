@@ -28,15 +28,20 @@ COPY --from=builder /go/bin/migrate /usr/local/bin/migrate
 WORKDIR /app
 COPY . .
 
+# Create non-root user and group
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# Create and set permissions for tmp directory
+RUN mkdir -p tmp && chown -R appuser:appgroup tmp
+
 # Make entrypoint.sh executable
 RUN chmod +x entrypoint.sh
 
-# Non-root user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 
+ENV API_VERSION=v1
 # Healthcheck
-HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
-  CMD curl -f http://localhost:8080/v1/health || exit 1
+# HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
+#   CMD curl -f http://localhost:8080/api/${API_VERSION}/health || exit 1
 
 ENTRYPOINT ["./entrypoint.sh"]
