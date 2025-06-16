@@ -1,0 +1,53 @@
+meta {
+  name: Get Deep Category Tree
+  type: http
+  seq: 5.1
+}
+
+get {
+  url: {{categories_url}}/:id/?limit={{created_category_id}}
+  body: none
+  auth: inherit
+}
+
+params:query {
+  limit: {{created_category_id}}
+}
+
+params:path {
+  id: 4
+}
+
+script:pre-request {
+  console.log('Requesting category tree with ID:', bru.getEnvVar('created_category_id'));
+  console.log('Limit:', 3);
+}
+
+script:post-response {
+  const responseData = res.body;
+  
+  console.log('Response status:', res.status);
+  console.log('Response message:', responseData.message);
+  
+  if (responseData && responseData.data) {
+    // Store the deep category tree
+    bru.setEnvVar('deep_category_tree', JSON.stringify(responseData.data));
+    
+    // Function to recursively log the tree structure
+    function logCategoryTree(category, level = 0) {
+      const indent = '  '.repeat(level);
+      console.log(`${indent}Category: ${category.name} (ID: ${category.category_id})`);
+      
+      if (category.children && category.children.length > 0) {
+        console.log(`${indent}Children:`);
+        category.children.forEach(child => logCategoryTree(child, level + 1));
+      }
+    }
+    
+    // Log the entire tree structure
+    console.log('Deep Category Tree Structure:');
+    responseData.data.forEach(category => logCategoryTree(category));
+  } else {
+    console.error('Failed to store deep category tree data.');
+  }
+}

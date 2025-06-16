@@ -97,60 +97,68 @@ func (r *CategoryRepository) FetchCategoryChildren(ctx context.Context, category
 }
 
 func (r *CategoryRepository) FetchCategoryTree(ctx context.Context, categoryId int, limit int) ([]*models.CategoryNode, error) {
+	if categoryId <= 0 {
+		return nil, errs.BadRequest("invalid category ID", fmt.Errorf("categoryId must be positive, got %d", categoryId))
+	}
+	if limit < 0 {
+		return nil, errs.BadRequest("invalid limit", fmt.Errorf("limit must be non-negative, got %d", limit))
+	}
+
 	query := `
 		WITH RECURSIVE category_tree AS (
 			-- Anchor: Select the starting category
 			SELECT category_id, category_name, parent_category_id, 0 AS level
 			FROM categories
 			WHERE category_id = $1
-
 			UNION ALL
-
 			-- Recursive: Join children with the previous step
 			SELECT c.category_id, c.category_name, c.parent_category_id, ct.level + 1
 			FROM categories c
 			JOIN category_tree ct ON c.parent_category_id = ct.category_id
 			WHERE ct.level < $2
 		)
-		SELECT category_id, category_name, parent_category_id FROM category_tree;
+		SELECT category_id, category_name, parent_category_id FROM category_tree
+		ORDER BY level, category_id;
 	`
 
 	rows, err := r.DB.Pool.Query(ctx, query, categoryId, limit)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query category tree: %w", err)
+		return nil, errs.InternalError(fmt.Sprintf("failed to query category tree for category ID %d", categoryId), err)
 	}
 	defer rows.Close()
 
-	// Use a map to track all nodes by their ID for easy lookup.
+	// Use a map to track all nodes by their ID for easy lookup
 	nodeMap := make(map[int]*models.CategoryNode)
-	// This slice will store the root nodes of the requested tree.
-	var rootCategories []*models.CategoryNode
+	var rootNode *models.CategoryNode
 
 	for rows.Next() {
 		var id int
 		var name string
-		var parentId *int // for nullable parent IDs
+		var parentId *int
 
 		if err := rows.Scan(&id, &name, &parentId); err != nil {
-			return nil, fmt.Errorf("failed to scan category row: %w", err)
+			return nil, errs.InternalError(fmt.Sprintf("failed to scan category row for category ID %d", categoryId), err)
 		}
 
 		node := &models.CategoryNode{
 			CategoryID:       id,
 			Name:             name,
 			ParentCategoryID: parentId,
+			Children:         make([]*models.CategoryNode, 0),
 		}
 		nodeMap[id] = node
 
-		// If this is the starting category (or a root within the fetched tree), add it to rootCategories
-		// We determine this by checking if its parent is the original categoryId, or if parentId is nil
-		// and it's within the fetched set. For a single starting category, this check is simpler.
+		// Identify the root category
 		if id == categoryId {
-			rootCategories = append(rootCategories, node)
+			rootNode = node
 		}
 	}
 
-	// Now, iterate through the nodeMap to establish parent-child relationships
+	if rootNode == nil {
+		return nil, errs.NotFound(fmt.Sprintf("category with ID %d not found", categoryId), nil)
+	}
+
+	// Build the tree structure
 	for _, node := range nodeMap {
 		if node.ParentCategoryID != nil {
 			if parentNode, ok := nodeMap[*node.ParentCategoryID]; ok {
@@ -159,22 +167,8 @@ func (r *CategoryRepository) FetchCategoryTree(ctx context.Context, categoryId i
 		}
 	}
 
-	// The `rootCategories` now contains the starting category, with its children and their children populated.
-	// Ensure that if the initial category itself is a child of something outside the 'limit' or 'categoryId',
-	// we still return it as the root of the fetched tree.
-	// If the initial `categoryId` had no parent in the fetched set, it will be in `rootCategories`.
-	// If the initial `categoryId` was part of a larger tree and had a parent, it's already linked
-	// through `nodeMap`. We need to explicitly find and return only the `categoryId`'s node.
-
-	// Since we are starting with a specific categoryId, the result should usually be a single category
-	// with its children populated, or just that category if it has no children within the limit.
-	// So, let's find the original category by its ID.
-	targetCategory, ok := nodeMap[categoryId]
-	if !ok {
-		return nil, errs.NotFound(fmt.Sprintf("Category with ID %d not found", categoryId), nil)
-	}
-
-	return []*models.CategoryNode{targetCategory}, nil
+	// Return the root node in an array
+	return []*models.CategoryNode{rootNode}, nil
 }
 
 func (r *CategoryRepository) UpdateCategory(ctx context.Context, categoryId int, fields map[string]any) error {
