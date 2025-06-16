@@ -5,10 +5,6 @@ import { useGetProductsQuery, useGetCategoriesQuery, useGetBrandsQuery } from "@
 import type { Product, Category, Brand } from "@/lib/types"
 import { ShoppingCart, Search, PanelRightClose, PanelLeftClose, ChevronRight, ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
-import { Card, CardContent } from "@/components/ui/card"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
 
 // Mock nested categories structure - you can replace this with your API data
 const nestedCategories = [
@@ -140,7 +136,7 @@ const nestedCategories = [
   },
 ]
 
-function CategorySidebar() {
+function NestedCategorySidebar({ onCategorySelect }: { onCategorySelect: (categoryName: string) => void }) {
   const [selectedCategory, setSelectedCategory] = useState<any>(null)
   const [selectedSubcategory, setSelectedSubcategory] = useState<any>(null)
   const [showThirdLevel, setShowThirdLevel] = useState(false)
@@ -156,13 +152,11 @@ function CategorySidebar() {
       setSelectedSubcategory(subcategory)
       setShowThirdLevel(true)
     } else {
-      // This is a final category - trigger search
       onCategorySelect(subcategory.name)
     }
   }
 
   const handleThirdLevelClick = (item: any) => {
-    // This is a final category - trigger search
     onCategorySelect(item.name)
   }
 
@@ -172,16 +166,14 @@ function CategorySidebar() {
   }
 
   return (
-    <div className="h-full">
+    <div className="h-screen bg-white">
       <div className="flex h-full">
-        {/* First Level - Always visible */}
-        <div
-          className={`w-72 bg-white shadow-xl border-r transition-all duration-300 ${showThirdLevel ? "opacity-50" : ""}`}
-        >
+        {/* First Level */}
+        <div className={`w-72 bg-white shadow-xl border-r transition-all duration-300 ${showThirdLevel ? "opacity-50" : ""}`}>
           <div className="p-4 border-b bg-gradient-to-r from-indigo-600 to-purple-600">
             <h3 className="font-semibold text-white">Categories</h3>
           </div>
-          <div className="p-2 max-h-screen overflow-y-auto">
+          <div className="p-2 h-[calc(100vh-4rem)] overflow-y-auto">
             {nestedCategories.map((category) => (
               <button
                 key={category.id}
@@ -202,11 +194,9 @@ function CategorySidebar() {
           </div>
         </div>
 
-        {/* Second Level - Shows when category selected */}
+        {/* Second Level */}
         {selectedCategory && (
-          <div
-            className={`w-72 bg-gradient-to-b from-gray-50 to-white shadow-xl border-r transition-all duration-300 ${showThirdLevel ? "-ml-72 z-10 relative" : ""}`}
-          >
+          <div className={`w-72 bg-gradient-to-b from-gray-50 to-white shadow-xl border-r transition-all duration-300 ${showThirdLevel ? "-ml-72 z-10 relative" : ""}`}>
             {showThirdLevel && (
               <div className="p-4 border-b bg-gradient-to-r from-purple-600 to-pink-600">
                 <button
@@ -221,7 +211,7 @@ function CategorySidebar() {
             <div className="p-4 border-b bg-gradient-to-r from-indigo-500 to-purple-500">
               <h4 className="font-semibold text-white">{selectedCategory.name}</h4>
             </div>
-            <div className="p-2 max-h-screen overflow-y-auto">
+            <div className="p-2 h-[calc(100vh-4rem)] overflow-y-auto">
               {selectedCategory.subcategories?.map((subcategory: any) => (
                 <button
                   key={subcategory.id}
@@ -244,13 +234,13 @@ function CategorySidebar() {
           </div>
         )}
 
-        {/* Third Level - Shows when subcategory with children selected */}
+        {/* Third Level */}
         {showThirdLevel && selectedSubcategory && (
           <div className="w-72 bg-white shadow-xl border-r">
             <div className="p-4 border-b bg-gradient-to-r from-pink-500 to-red-500">
               <h4 className="font-semibold text-white">{selectedSubcategory.name}</h4>
             </div>
-            <div className="p-2 max-h-screen overflow-y-auto">
+            <div className="p-2 h-[calc(100vh-4rem)] overflow-y-auto">
               {selectedSubcategory.subcategories?.map((item: any) => (
                 <button
                   key={item.id}
@@ -269,88 +259,70 @@ function CategorySidebar() {
   )
 }
 
-function ProductCard({ product }: { product: Product }) {
-  return (
-    <Link href={`/products/${product.product_id}`}>
-      <Card className="h-full transition-all hover:shadow-lg">
-        <CardContent className="p-4">
-          <div className="relative aspect-square mb-4">
-            <Image
-              src={product.image || '/pc1.jpg'}
-              alt={product.name}
-              fill
-              className="object-contain rounded-lg"
-            />
-          </div>
-          <h3 className="font-semibold mb-2 line-clamp-2">{product.name}</h3>
-          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-            {product.description}
-          </p>
-          <div className="flex items-center justify-between">
-            <p className="font-bold text-primary">${product.price}</p>
-            <Button size="sm" disabled={product.stock_quantity === 0}>
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              Add to Cart
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
-  )
-}
-
 export default function HomePage() {
   const [showSidebar, setShowSidebar] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
   const [selectedBrand, setSelectedBrand] = useState<number | null>(null)
-  const [priceRange, setPriceRange] = useState<string>("all")
-  const [sortBy, setSortBy] = useState<string>("featured")
   const [categorySearchQuery, setCategorySearchQuery] = useState<string>("")
+
+  const [cartItems, setCartItems] = useState<any[]>([])
+
+  const handleAddToCart = (product: Product) => {
+    setCartItems((prev) => {
+      const existing = prev.find((item) => item.product_id === product.product_id)
+      if (existing) {
+        return prev.map((item) =>
+          item.product_id === product.product_id ? { ...item, quantity: item.quantity + 1 } : item,
+        )
+      }
+      return [...prev, { ...product, quantity: 1 }]
+    })
+  }
+
+  const getTotalCartItems = () => {
+    return cartItems.reduce((sum, item) => sum + item.quantity, 0)
+  }
 
   const { data: productsData, isLoading: isLoadingProducts } = useGetProductsQuery()
   const { data: categoriesData, isLoading: isLoadingCategories } = useGetCategoriesQuery()
   const { data: brandsData, isLoading: isLoadingBrands } = useGetBrandsQuery()
-  
+
+  console.log("productsData", productsData)
   const products = productsData?.data.products || []
   const categories = categoriesData?.data.categories || []
   const brands = brandsData?.data.brands || []
 
-  const filteredProducts = products
-    .filter((product: Product) => {
-      const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           product.description.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesBrand = selectedBrand ? product.brand_id === selectedBrand : true
-      const matchesCategorySearch = categorySearchQuery
-        ? product.name.toLowerCase().includes(categorySearchQuery.toLowerCase()) ||
-          product.description.toLowerCase().includes(categorySearchQuery.toLowerCase())
-        : true
-      
-      // Price range filter
-      if (priceRange !== "all") {
-        const [min, max] = priceRange.split("-").map(Number)
-        if (max) {
-          if (product.price < min || product.price > max) return false
-        } else {
-          if (product.price < min) return false
-        }
-      }
-      
-      return matchesSearch && matchesBrand && matchesCategorySearch
-    })
-    .sort((a: Product, b: Product) => {
-      switch (sortBy) {
-        case "price-low":
-          return a.price - b.price
-        case "price-high":
-          return b.price - a.price
-        case "name-asc":
-          return a.name.localeCompare(b.name)
-        case "name-desc":
-          return b.name.localeCompare(a.name)
-        default:
-          return 0
-      }
-    })
+  const handleCategorySelect = async (categoryName: string) => {
+    setCategorySearchQuery(categoryName)
+    setShowSidebar(false) // Close sidebar after selection
+
+    // Here you can make an API call to search for products in this category
+    // For example:
+    // try {
+    //   const response = await fetch(`/api/products/search?category=${encodeURIComponent(categoryName)}`)
+    //   const data = await response.json()
+    //   // Handle the response data
+    // } catch (error) {
+    //   console.error('Error searching products:', error)
+    // }
+
+    console.log(`Searching for products in category: ${categoryName}`)
+  }
+
+  const filteredProducts = products.filter((product: Product) => {
+    const matchesSearch =
+      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.description.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesCategory = selectedCategory ? product.categroy_id === selectedCategory : true
+    const matchesBrand = selectedBrand ? product.brand_id === selectedBrand : true
+    const matchesCategorySearch = categorySearchQuery
+      ? product.name.toLowerCase().includes(categorySearchQuery.toLowerCase()) ||
+        product.description.toLowerCase().includes(categorySearchQuery.toLowerCase())
+      : true
+
+    return matchesSearch && matchesCategory && matchesBrand && matchesCategorySearch
+  })
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
@@ -389,9 +361,11 @@ export default function HomePage() {
               </div>
               <Link href="/cart" className="relative p-2 hover:bg-indigo-50 rounded-md transition-colors">
                 <ShoppingCart className="h-6 w-6 text-indigo-600" />
-                <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                  0
-                </span>
+                {getTotalCartItems() > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                    {getTotalCartItems()}
+                  </span>
+                )}
               </Link>
             </div>
           </div>
@@ -404,77 +378,108 @@ export default function HomePage() {
           {showSidebar && (
             <div className="fixed inset-0 z-50">
               <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowSidebar(false)} />
-              <div className="absolute inset-y-0 left-0">
-                <CategorySidebar />
+              <div className="absolute inset-y-0 left-0 h-screen">
+                <NestedCategorySidebar onCategorySelect={handleCategorySelect} />
               </div>
             </div>
           )}
 
           {/* Main Content */}
           <div>
-            {/* Filters */}
-            <div className="mb-6 flex flex-wrap gap-4">
-              {/* Brand Filter */}
-              <Select
-                value={selectedBrand?.toString() || "all"}
-                onValueChange={(value) => setSelectedBrand(value === "all" ? null : parseInt(value))}
-              >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Filter by brand" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Brands</SelectItem>
-                  {brands.map((brand: Brand) => (
-                    <SelectItem key={brand.brand_id} value={brand.brand_id.toString()}>
-                      {brand.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Price Range Filter */}
-              <Select
-                value={priceRange}
-                onValueChange={setPriceRange}
-              >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Price range" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Prices</SelectItem>
-                  <SelectItem value="0-50">Under $50</SelectItem>
-                  <SelectItem value="50-100">$50 - $100</SelectItem>
-                  <SelectItem value="100-200">$100 - $200</SelectItem>
-                  <SelectItem value="200-500">$200 - $500</SelectItem>
-                  <SelectItem value="500">$500 & Above</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Sort Filter */}
-              <Select
-                value={sortBy}
-                onValueChange={setSortBy}
-              >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="featured">Featured</SelectItem>
-                  <SelectItem value="price-low">Price: Low to High</SelectItem>
-                  <SelectItem value="price-high">Price: High to Low</SelectItem>
-                  <SelectItem value="name-asc">Name: A to Z</SelectItem>
-                  <SelectItem value="name-desc">Name: Z to A</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Active Filters Display */}
+            {(categorySearchQuery || selectedCategory || selectedBrand) && (
+              <div className="mb-6 flex flex-wrap gap-2">
+                <span className="text-sm text-gray-600">Active filters:</span>
+                {categorySearchQuery && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-700">
+                    Category: {categorySearchQuery}
+                    <button
+                      onClick={() => setCategorySearchQuery("")}
+                      className="ml-2 text-indigo-500 hover:text-indigo-700"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+                {selectedCategory && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700">
+                    {categories.find((c) => c.category_id === selectedCategory)?.category_name}
+                    <button
+                      onClick={() => setSelectedCategory(null)}
+                      className="ml-2 text-blue-500 hover:text-blue-700"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+                {selectedBrand && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-green-100 to-emerald-100 text-green-700">
+                    {brands.find((b) => b.brand_id === selectedBrand)?.name}
+                    <button onClick={() => setSelectedBrand(null)} className="ml-2 text-green-500 hover:text-green-700">
+                      ×
+                    </button>
+                  </span>
+                )}
+              </div>
+            )}
 
             {isLoadingProducts ? (
-              <div className="text-center py-8">Loading products...</div>
+              <div className="text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                <p className="mt-2 text-gray-600">Loading products...</p>
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredProducts.map((product: Product) => (
-                  <ProductCard key={product.product_id} product={product} />
+                  <div
+                    key={product.product_id}
+                    onClick={() => (window.location.href = `/products/${product.product_id}`)}
+                    className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 hover:scale-105 cursor-pointer"
+                  >
+                    <div className="aspect-w-1 aspect-h-1">
+                      <img src={product.image || "/pc1.jpg"} alt={product.name} className="w-full h-48 object-cover" />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 min-h-[3rem]">{product.name}</h3>
+                      <p className="mt-1 text-sm text-gray-500 line-clamp-2">{product.description}</p>
+                      <div className="mt-4 flex items-center justify-between">
+                        <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                          ${product.price.toFixed(2)}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation() // Prevent card click
+                            handleAddToCart(product)
+                          }}
+                          className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-2 rounded-md transition-all duration-200 shadow-md hover:shadow-lg"
+                        >
+                          Add to Cart
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 ))}
+              </div>
+            )}
+
+            {filteredProducts.length === 0 && !isLoadingProducts && (
+              <div className="text-center py-16">
+                <div className="w-24 h-24 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Search className="h-12 w-12 text-indigo-400" />
+                </div>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-2">No products found</h2>
+                <p className="text-gray-600 mb-8">Try adjusting your search or filters</p>
+                <button
+                  onClick={() => {
+                    setSearchQuery("")
+                    setSelectedCategory(null)
+                    setSelectedBrand(null)
+                    setCategorySearchQuery("")
+                  }}
+                  className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-2 rounded-md transition-all duration-200"
+                >
+                  Clear All Filters
+                </button>
               </div>
             )}
           </div>
