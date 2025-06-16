@@ -1,0 +1,44 @@
+meta {
+  name: Update Build Incompatible Items
+  type: http
+  seq: 4.1
+}
+
+put {
+  url: {{build_url}}/:id
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+params:path {
+  id: {{created_build_id}}
+}
+
+body:json {
+  "name": "Updated Incompatible Build",
+  "items": [
+    {
+      "product_id": {{created_product_id}},
+      "quantity": 1
+    },
+    {
+      "product_id": 999999,
+      "quantity": 1
+    }
+  ]
+}
+
+script:post-response {
+  const responseData = res.body;
+  
+  if (responseData && responseData.error) {
+    console.log('Error response received as expected:');
+    console.log('Error message:', responseData.error);
+  } else {
+    console.error('Expected error response but got:', responseData);
+  }
+} 

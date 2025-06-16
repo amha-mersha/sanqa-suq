@@ -1,0 +1,36 @@
+meta {
+  name: Create Build Invalid Items
+  type: http
+  seq: 1.2
+}
+
+post {
+  url: {{build_url}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+body:json {
+  "name": "Invalid Build",
+  "items": [
+    {
+      "product_id": 999999,
+      "quantity": 0
+    }
+  ]
+}
+
+script:post-response {
+  const responseData = res.body;
+  
+  if (responseData && responseData.error) {
+    console.log('Error response received as expected:');
+    console.log('Error message:', responseData.error);
+  } else {
+    console.error('Expected error response but got:', responseData);
+  }
+} 
