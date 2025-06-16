@@ -15,17 +15,19 @@ auth:bearer {
 }
 
 body:json {
-  "name": "High-End Gaming PC",
-  "items": [
-    {
-      "product_id": {{created_product_id}},
-      "quantity": 1
-    },
-    {
-      "product_id": {{created_product_id}},
-      "quantity": 2
-    }
-  ]
+  {
+    "name": "High-End Gaming PC",
+    "items": [
+      {
+        "product_id": 2,
+        "quantity": 1
+      },
+      {
+        "product_id": 1,
+        "quantity": 1
+      }
+    ]
+  }
 }
 
 script:post-response {
@@ -51,4 +53,4 @@ script:post-response {
   } else {
     console.error('Failed to extract build_id from response body.');
   }
-} 
+}

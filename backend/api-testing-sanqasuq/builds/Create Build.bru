@@ -7,7 +7,11 @@ meta {
 post {
   url: {{build_url}}
   body: json
-  auth: inherit
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
 }
 
 body:json {
@@ -15,7 +19,7 @@ body:json {
     "name": "Gaming PC Build",
     "items": [
       {
-        "product_id": {{created_product_id}},
+        "product_id":1,
         "quantity": 1
       }
     ]
@@ -31,4 +35,4 @@ script:post-response {
   } else {
     console.error('Failed to extract build_id from response body.');
   }
-} 
+}

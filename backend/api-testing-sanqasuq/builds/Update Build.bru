@@ -7,11 +7,15 @@ meta {
 put {
   url: {{build_url}}/:id
   body: json
-  auth: inherit
+  auth: bearer
 }
 
 params:path {
   id: {{created_build_id}}
+}
+
+auth:bearer {
+  token: {{auth_token}}
 }
 
 body:json {
@@ -19,9 +23,17 @@ body:json {
     "name": "Updated Gaming PC Build",
     "items": [
       {
-        "product_id": {{created_product_id}},
+        "product_id": 1,
         "quantity": 2
       }
     ]
   }
-} 
+}
+
+script:post-response {
+  if (res.status === 200) {
+    console.log('Successfully updated build');
+  } else {
+    console.error('Failed to update build:', res.status);
+  }
+}

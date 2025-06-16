@@ -5,7 +5,40 @@ meta {
 }
 
 get {
-  url: {{build_url}}/user
+  url: {{build_url}}
   body: none
-  auth: inherit
-} 
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+script:post-response {
+  const responseData = res.body;
+  
+  if (responseData && Array.isArray(responseData)) {
+    console.log('Number of builds found:', responseData.length);
+    
+    // Log details for each build
+    responseData.forEach((build, index) => {
+      console.log(`\nBuild ${index + 1}:`);
+      console.log(`  - Build ID: ${build.build_id}`);
+      console.log(`  - Name: ${build.name}`);
+      console.log(`  - Created At: ${build.created_at}`);
+      console.log(`  - Total Price: ${build.total_price}`);
+      console.log(`  - Number of Items: ${build.items.length}`);
+      
+      // Log items for this build
+      build.items.forEach((item, itemIndex) => {
+        console.log(`    Item ${itemIndex + 1}:`);
+        console.log(`      - Product ID: ${item.product_id}`);
+        console.log(`      - Product Name: ${item.product_name}`);
+        console.log(`      - Quantity: ${item.quantity}`);
+        console.log(`      - Price: ${item.price}`);
+      });
+    });
+  } else {
+    console.error('Expected array of builds but got:', responseData);
+  }
+}
