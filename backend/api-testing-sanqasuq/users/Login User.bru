@@ -7,13 +7,25 @@ meta {
 post {
   url: {{user_url}}/login
   body: json
-  auth: inherit
+  auth: none
 }
 
 body:json {
   // UserLoginDTO
   {
     "email": "john.doe@example.com",
-    "password": "secure12345"
+    "password": "Secure.12345"
+  }
+}
+
+script:post-response {
+  const responseData = res.body;
+  
+  if (responseData && responseData.token) {
+    // Set the token as an environment variable
+    bru.setEnvVar('auth_token', responseData.token);
+    console.log('Successfully set auth token and cookie');
+  } else {
+    console.error('Failed to extract token from response body');
   }
 }

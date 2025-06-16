@@ -24,7 +24,8 @@ func NewUserRepository(db *database.DB) *UserRepository {
 }
 
 func (r *UserRepository) FindUserByID(ctx context.Context, userId string) (*models.User, error) {
-	query := `SELECT * FROM users WHERE users.user_id = $1`
+	query := `SELECT user_id, first_name, last_name, email, password_hash, phone, role, provider, provider_id, created_at 
+	          FROM users WHERE user_id = $1`
 	var user models.User
 
 	row := r.DB.Pool.QueryRow(ctx, query, userId)
@@ -33,7 +34,9 @@ func (r *UserRepository) FindUserByID(ctx context.Context, userId string) (*mode
 		&user.FirstName,
 		&user.LastName,
 		&user.Email,
-		&user.PasswordHash, &user.Phone, &user.Role,
+		&user.PasswordHash,
+		&user.Phone,
+		&user.Role,
 		&user.Provider,
 		&user.ProviderID,
 		&user.CreatedAt,
@@ -47,15 +50,19 @@ func (r *UserRepository) FindUserByID(ctx context.Context, userId string) (*mode
 }
 
 func (r *UserRepository) FindUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	query := `SELECT * FROM users WHERE users.email = $1`
+	query := `SELECT user_id, first_name, last_name, email, password_hash, phone, role, provider, provider_id, created_at 
+	          FROM users WHERE email = $1`
 	var user models.User
+
 	row := r.DB.Pool.QueryRow(ctx, query, email)
 	if err := row.Scan(
 		&user.ID,
 		&user.FirstName,
 		&user.LastName,
 		&user.Email,
-		&user.PasswordHash, &user.Phone, &user.Role,
+		&user.PasswordHash,
+		&user.Phone,
+		&user.Role,
 		&user.Provider,
 		&user.ProviderID,
 		&user.CreatedAt,
@@ -68,9 +75,12 @@ func (r *UserRepository) FindUserByEmail(ctx context.Context, email string) (*mo
 	return &user, nil
 }
 
-func (r *UserRepository) InsertUser(ctx context.Context, user *models.User) error {
+func (r *UserRepository) InsertUser(ctx context.Context, user *models.User) (*models.User, error) {
 	query := `INSERT INTO users (first_name, last_name, email, password_hash, phone, role, provider, provider_id) 
-	          VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING user_id;`
+	          VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+	          RETURNING user_id, first_name, last_name, email, phone, role, provider, provider_id, created_at;`
+
+	var insertedUser models.User
 	err := r.DB.Pool.QueryRow(ctx, query,
 		user.FirstName,
 		user.LastName,
@@ -79,11 +89,21 @@ func (r *UserRepository) InsertUser(ctx context.Context, user *models.User) erro
 		user.Phone,
 		user.Role,
 		user.Provider,
-		user.ProviderID).Scan(&user.ID)
+		user.ProviderID).Scan(
+		&insertedUser.ID,
+		&insertedUser.FirstName,
+		&insertedUser.LastName,
+		&insertedUser.Email,
+		&insertedUser.Phone,
+		&insertedUser.Role,
+		&insertedUser.Provider,
+		&insertedUser.ProviderID,
+		&insertedUser.CreatedAt,
+	)
 	if err != nil {
-		return errs.InternalError("Failed to insert user", err)
+		return nil, errs.InternalError("Failed to insert user", err)
 	}
-	return nil
+	return &insertedUser, nil
 }
 
 func (r *UserRepository) UpdateUser(ctx context.Context, userId string, updateFields map[string]any) (*models.User, error) {
@@ -100,20 +120,21 @@ func (r *UserRepository) UpdateUser(ctx context.Context, userId string, updateFi
 		UPDATE users 
 		SET %s 
 		WHERE user_id = $%d 
-		RETURNING user_id, email, first_name, last_name, phone, role, created_at, provider, provider_id
+		RETURNING user_id, first_name, last_name, email, password_hash, phone, role, provider, provider_id, created_at
 	`, strings.Join(setClauses, ", "), i)
 
 	var updatedUser models.User
 	err := r.DB.Pool.QueryRow(ctx, query, values...).Scan(
 		&updatedUser.ID,
-		&updatedUser.Email,
 		&updatedUser.FirstName,
 		&updatedUser.LastName,
+		&updatedUser.Email,
+		&updatedUser.PasswordHash,
 		&updatedUser.Phone,
 		&updatedUser.Role,
-		&updatedUser.CreatedAt,
 		&updatedUser.Provider,
 		&updatedUser.ProviderID,
+		&updatedUser.CreatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

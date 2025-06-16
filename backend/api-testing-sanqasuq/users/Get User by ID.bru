@@ -1,0 +1,19 @@
+meta {
+  name: Get User by ID
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{user_url}}/:user_id
+  body: none
+  auth: bearer
+}
+
+params:path {
+  user_id: {{created_user_id}}
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}

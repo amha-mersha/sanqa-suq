@@ -1,0 +1,21 @@
+meta {
+  name: Update Category Invalid Body
+  type: http
+  seq: 8
+}
+
+put {
+  url: {{categories_url}}/:id
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: {{created_category_id}}
+}
+
+body:json {
+  {
+    "invalid_field": "This should fail"
+  }
+}
