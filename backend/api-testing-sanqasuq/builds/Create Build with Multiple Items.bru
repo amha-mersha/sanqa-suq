@@ -1,0 +1,54 @@
+meta {
+  name: Create Build with Multiple Items
+  type: http
+  seq: 1.1
+}
+
+post {
+  url: {{build_url}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+body:json {
+  "name": "High-End Gaming PC",
+  "items": [
+    {
+      "product_id": {{created_product_id}},
+      "quantity": 1
+    },
+    {
+      "product_id": {{created_product_id}},
+      "quantity": 2
+    }
+  ]
+}
+
+script:post-response {
+  const responseData = res.body;
+  
+  if (responseData && responseData.build_id) {
+    bru.setEnvVar('created_build_id', responseData.build_id);
+    console.log('Created build ID:', responseData.build_id);
+    
+    // Verify the response structure
+    console.log('Build name:', responseData.name);
+    console.log('Total price:', responseData.total_price);
+    console.log('Number of items:', responseData.items.length);
+    
+    // Log each item's details
+    responseData.items.forEach((item, index) => {
+      console.log(`Item ${index + 1}:`);
+      console.log(`  - Product ID: ${item.product_id}`);
+      console.log(`  - Quantity: ${item.quantity}`);
+      console.log(`  - Product Name: ${item.product_name}`);
+      console.log(`  - Price: ${item.price}`);
+    });
+  } else {
+    console.error('Failed to extract build_id from response body.');
+  }
+} 
