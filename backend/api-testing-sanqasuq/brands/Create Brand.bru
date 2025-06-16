@@ -1,0 +1,47 @@
+meta {
+  name: Create Brand
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{product_url}}/add
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "brand_id": 101,
+    "name": "TechTrend",
+    "description": "Innovative technology solutions for modern lifestyles"
+  }
+}
+
+script:post-response {
+  const response = bru.getBody();
+  
+  if (response) {
+    try {
+      const data = JSON.parse(response);
+      // Extract product_id for Products
+      if (data.product_id) {
+        bru.setEnvVar('created_product_id', data.product_id);
+      }
+    } catch (error) {
+      console.error('Failed to parse response or set environment variables:', error);
+    }
+  }
+}
+
+tests {
+  {
+    "categroy_id": 1,
+    "brand_id": 2,
+    "name": "Laptop",
+    "description": "Gaming laptop",
+    "price": 1499.99,
+    "stock_quantity": 10
+  }
+  
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Get A Category
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{categories_url}}/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: {{created_category_id}}
+}
