@@ -10,19 +10,40 @@ export const api = createApi({
       query: () => 'product',
       providesTags: ['Product'],
     }),
+    getProductsByCategory: builder.query<ProductsResponse, number>({
+      query: (categoryId) => `product/get-by-category/${categoryId}`,
+      providesTags: ['Product'],
+    }),
     getCategories: builder.query<CategoriesResponse, void>({
-      query: () => 'category',
+      query: () => 'categories',
       providesTags: ['Category'],
     }),
     getBrands: builder.query<BrandsResponse, void>({
       query: () => 'brand',
       providesTags: ['Brand'],
     }),
+    addProduct: builder.mutation<any, {
+      category_id: number;
+      brand_id: number;
+      name: string;
+      description: string;
+      price: number;
+      stock_quantity: number;
+    }>({
+      query: (product) => ({
+        url: 'product/add',
+        method: 'POST',
+        body: product,
+      }),
+      invalidatesTags: ['Product'],
+    }),
   }),
 });
 
 export const {
   useGetProductsQuery,
+  useGetProductsByCategoryQuery,
   useGetCategoriesQuery,
   useGetBrandsQuery,
+  useAddProductMutation,
 } = api; 

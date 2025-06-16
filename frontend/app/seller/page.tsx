@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Edit, Trash2, Package, DollarSign, Tag } from "lucide-react"
 import Image from "next/image"
-import { useGetProductsQuery, useGetCategoriesQuery, useGetBrandsQuery } from "@/lib/api"
+import { useGetProductsQuery, useGetCategoriesQuery, useGetBrandsQuery, useAddProductMutation } from "@/lib/api"
 import { Product, Category, Brand } from "@/lib/types"
 
 export default function SellerPage() {
@@ -26,10 +26,38 @@ export default function SellerPage() {
   const { data: productsData, isLoading: isLoadingProducts } = useGetProductsQuery()
   const { data: categoriesData, isLoading: isLoadingCategories } = useGetCategoriesQuery()
   const { data: brandsData, isLoading: isLoadingBrands } = useGetBrandsQuery()
+  const [addProduct, { isLoading: isAdding }] = useAddProductMutation()
 
   const products = productsData?.data.products || []
-  const categories = categoriesData?.data.categories || []
+  const categories = categoriesData?.data || []
   const brands = brandsData?.data.brands || []
+
+  // Get leaf-level categories (categories without children)
+  const leafCategories = useMemo(() => {
+    const categoryMap = new Map()
+    const allCategories = categories
+
+    // First pass: Create a map of all categories
+    allCategories.forEach(category => {
+      categoryMap.set(category.category_id, {
+        ...category,
+        hasChildren: false
+      })
+    })
+
+    // Second pass: Mark categories that have children
+    allCategories.forEach(category => {
+      if (category.parent_category_id) {
+        const parent = categoryMap.get(category.parent_category_id)
+        if (parent) {
+          parent.hasChildren = true
+        }
+      }
+    })
+
+    // Return only categories without children
+    return Array.from(categoryMap.values()).filter(category => !category.hasChildren)
+  }, [categories])
 
   const handleAddProduct = async () => {
     if (!newProduct.name || !newProduct.category_id || !newProduct.brand_id || !newProduct.price || !newProduct.stock_quantity) {
@@ -38,24 +66,14 @@ export default function SellerPage() {
     }
 
     try {
-      const response = await fetch("http://localhost:8080/api/v1/product/add", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          category_id: parseInt(newProduct.category_id),
-          brand_id: parseInt(newProduct.brand_id),
-          name: newProduct.name,
-          description: newProduct.description,
-          price: parseFloat(newProduct.price.toString()),
-          stock_quantity: parseInt(newProduct.stock_quantity.toString()),
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to add product")
-      }
+      await addProduct({
+        category_id: parseInt(newProduct.category_id),
+        brand_id: parseInt(newProduct.brand_id),
+        name: newProduct.name,
+        description: newProduct.description,
+        price: parseFloat(newProduct.price.toString()),
+        stock_quantity: parseInt(newProduct.stock_quantity.toString()),
+      }).unwrap()
 
       // Reset form
       setNewProduct({
@@ -115,7 +133,7 @@ export default function SellerPage() {
               <CardHeader>
                 <CardTitle>Add New Product</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Product Name</label>
@@ -135,7 +153,7 @@ export default function SellerPage() {
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 mt-4">
                   <label className="text-sm font-medium">Description</label>
                   <Textarea
                     value={newProduct.description}
@@ -143,7 +161,7 @@ export default function SellerPage() {
                     placeholder="Enter product description"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 mt-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Category</label>
                     <Select
@@ -154,9 +172,9 @@ export default function SellerPage() {
                         <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
                       <SelectContent>
-                        {categories.map((category: Category) => (
+                        {leafCategories.map((category) => (
                           <SelectItem key={category.category_id} value={category.category_id.toString()}>
-                            {category.category_name}
+                            {category.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -181,7 +199,7 @@ export default function SellerPage() {
                     </Select>
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 mt-4">
                   <label className="text-sm font-medium">Stock Quantity</label>
                   <Input
                     type="number"
@@ -190,11 +208,13 @@ export default function SellerPage() {
                     placeholder="Enter stock quantity"
                   />
                 </div>
-                <div className="flex justify-end space-x-2">
+                <div className="flex justify-end space-x-2 mt-6">
                   <Button variant="outline" onClick={() => setIsAddingProduct(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={handleAddProduct}>Add Product</Button>
+                  <Button onClick={handleAddProduct} disabled={isAdding}>
+                    {isAdding ? "Adding..." : "Add Product"}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -215,18 +235,18 @@ export default function SellerPage() {
                         }}
                       />
                     </div>
-                    <div className="space-y-2">
+                    <div>
                       <h3 className="font-semibold text-lg">{product.name}</h3>
                       <p className="text-sm text-muted-foreground line-clamp-2">
                         {product.description}
                       </p>
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between mt-2">
                         <span className="font-bold">${product.price}</span>
                         <span className="text-sm text-muted-foreground">
                           Stock: {product.stock_quantity}
                         </span>
                       </div>
-                      <div className="flex justify-end space-x-2">
+                      <div className="flex justify-end space-x-2 mt-4">
                         <Button variant="outline" size="sm">
                           <Edit className="h-4 w-4" />
                         </Button>
