@@ -17,3 +17,30 @@ params:query {
 params:path {
   id: {{created_category_id}}
 }
+
+script:post-response {
+  const responseData = res.body;
+  
+  if (responseData && responseData.data) {
+    // Store the entire category tree
+    bru.setEnvVar('category_tree', JSON.stringify(responseData.data));
+    
+    // Verify the nested structure
+    const category = responseData.data[0]; // Get the root category
+    if (category && category.children) {
+      console.log('Category tree structure:');
+      console.log('Root category:', category.name);
+      console.log('Number of direct children:', category.children.length);
+      
+      // Log each child and its children
+      category.children.forEach((child, index) => {
+        console.log(`Child ${index + 1}:`, child.name);
+        if (child.children) {
+          console.log(`  - Has ${child.children.length} sub-children`);
+        }
+      });
+    }
+  } else {
+    console.error('Failed to store category tree data.');
+  }
+}

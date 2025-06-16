@@ -42,6 +42,7 @@ func (handler *CategoryHandler) CreateCategory(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusCreated, gin.H{"message": "CATEGORY_CREATED_SUCCESSFULLY", "data": createdCategory})
 }
+
 func (h *CategoryHandler) GetCategory(ctx *gin.Context) {
 	categoryId := ctx.Param("id")
 	if categoryId == "" {
@@ -49,27 +50,34 @@ func (h *CategoryHandler) GetCategory(ctx *gin.Context) {
 		return
 	}
 
-	limitStr := ctx.DefaultQuery("limit", "-1")
+	limitStr := ctx.DefaultQuery("limit", "0")
 	limit, err := strconv.Atoi(limitStr)
-	if err != nil || limit < -1 {
+	if err != nil || limit < 0 {
 		ctx.Error(errs.BadRequest("INVALID_LIMIT_VALUE", err))
 		return
 	}
 
+	categories, err := h.serivce.GetCategoryWithChildren(ctx, categoryId, limit)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	if len(categories) == 0 {
+		ctx.Error(errs.NotFound("CATEGORY_NOT_FOUND", nil))
+		return
+	}
+
 	if limit == 0 {
-		category, err := h.serivce.GetCategoryById(ctx, categoryId)
-		if err != nil {
-			ctx.Error(err)
-			return
-		}
-		ctx.JSON(http.StatusOK, gin.H{"data": category, "message": "CATEGORY_RETRIEVED_SUCCESSFULLY"})
+		ctx.JSON(http.StatusOK, gin.H{
+			"data":    categories[0],
+			"message": "CATEGORY_RETRIEVED_SUCCESSFULLY",
+		})
 	} else {
-		categories, err := h.serivce.GetCategoryWithChildren(ctx, categoryId, limit)
-		if err != nil {
-			ctx.Error(err)
-			return
-		}
-		ctx.JSON(http.StatusOK, gin.H{"data": categories, "message": "CATEGORY_WITH_CHILDREN_RETRIEVED_SUCCESSFULLY"})
+		ctx.JSON(http.StatusOK, gin.H{
+			"data":    categories,
+			"message": "CATEGORY_TREE_RETRIEVED_SUCCESSFULLY",
+		})
 	}
 }
 
