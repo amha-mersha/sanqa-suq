@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/amha-mersha/sanqa-suq/internal/auth"
 	"github.com/amha-mersha/sanqa-suq/internal/dtos"
 	errs "github.com/amha-mersha/sanqa-suq/internal/errors"
 	"github.com/amha-mersha/sanqa-suq/internal/middlewares"
@@ -23,24 +24,18 @@ func NewBuildHandler(buildService *services.BuildService) *BuildHandler {
 func (h *BuildHandler) CreateBuild(c *gin.Context) {
 	var req dtos.CreateBuildRequestDTO
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.Error(err)
+		c.Error(errs.BadRequest("INVALID_REQUEST_BODY", err))
 		return
 	}
 
 	// Get user ID from context
-	claims, exists := c.Request.Context().Value(middlewares.UserClaimsKey).(map[string]interface{})
-	if !exists {
-		c.Error(errs.Unauthorized("user not authenticated", nil))
-		return
-	}
-
-	userID, ok := claims["user_id"].(string)
+	claims, ok := c.Request.Context().Value(middlewares.UserClaimsKey).(*auth.CustomClaims)
 	if !ok {
-		c.Error(errs.Unauthorized("invalid user claims", nil))
+		c.Error(errs.Unauthorized("MISSING_CLAIMS", nil))
 		return
 	}
 
-	response, err := h.buildService.CreateBuild(c.Request.Context(), userID, &req)
+	response, err := h.buildService.CreateBuild(c.Request.Context(), claims.UserID, &req)
 	if err != nil {
 		c.Error(err)
 		return
@@ -50,19 +45,13 @@ func (h *BuildHandler) CreateBuild(c *gin.Context) {
 }
 
 func (h *BuildHandler) GetUserBuilds(c *gin.Context) {
-	claims, exists := c.Request.Context().Value(middlewares.UserClaimsKey).(map[string]interface{})
-	if !exists {
-		c.Error(errs.Unauthorized("user not authenticated", nil))
-		return
-	}
-
-	userID, ok := claims["user_id"].(string)
+	claims, ok := c.Request.Context().Value(middlewares.UserClaimsKey).(*auth.CustomClaims)
 	if !ok {
-		c.Error(errs.Unauthorized("invalid user claims", nil))
+		c.Error(errs.Unauthorized("MISSING_CLAIMS", nil))
 		return
 	}
 
-	builds, err := h.buildService.GetUserBuilds(c.Request.Context(), userID)
+	builds, err := h.buildService.GetUserBuilds(c.Request.Context(), claims.UserID)
 	if err != nil {
 		c.Error(err)
 		return
@@ -74,7 +63,7 @@ func (h *BuildHandler) GetUserBuilds(c *gin.Context) {
 func (h *BuildHandler) GetBuildByID(c *gin.Context) {
 	buildID := c.Param("id")
 	if buildID == "" {
-		c.Error(errs.BadRequest("build ID is required", nil))
+		c.Error(errs.BadRequest("MISSING_BUILD_ID", nil))
 		return
 	}
 
@@ -90,30 +79,24 @@ func (h *BuildHandler) GetBuildByID(c *gin.Context) {
 func (h *BuildHandler) UpdateBuild(c *gin.Context) {
 	buildID := c.Param("id")
 	if buildID == "" {
-		c.Error(errs.BadRequest("build ID is required", nil))
+		c.Error(errs.BadRequest("MISSING_BUILD_ID", nil))
 		return
 	}
 
 	var req dtos.UpdateBuildRequestDTO
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.Error(err)
+		c.Error(errs.BadRequest("INVALID_REQUEST_BODY", err))
 		return
 	}
 
 	// Get user ID from context
-	claims, exists := c.Request.Context().Value(middlewares.UserClaimsKey).(map[string]interface{})
-	if !exists {
-		c.Error(errs.Unauthorized("user not authenticated", nil))
-		return
-	}
-
-	userID, ok := claims["user_id"].(string)
+	claims, ok := c.Request.Context().Value(middlewares.UserClaimsKey).(*auth.CustomClaims)
 	if !ok {
-		c.Error(errs.Unauthorized("invalid user claims", nil))
+		c.Error(errs.Unauthorized("MISSING_CLAIMS", nil))
 		return
 	}
 
-	response, err := h.buildService.UpdateBuild(c.Request.Context(), buildID, userID, &req)
+	response, err := h.buildService.UpdateBuild(c.Request.Context(), buildID, claims.UserID, &req)
 	if err != nil {
 		c.Error(err)
 		return

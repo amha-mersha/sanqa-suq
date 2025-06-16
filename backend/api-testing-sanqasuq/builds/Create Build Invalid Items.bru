@@ -1,7 +1,7 @@
 meta {
   name: Create Build Invalid Items
   type: http
-  seq: 1.2
+  seq: 2
 }
 
 post {
@@ -15,22 +15,21 @@ auth:bearer {
 }
 
 body:json {
-  "name": "Invalid Build",
-  "items": [
-    {
-      "product_id": 999999,
-      "quantity": 0
-    }
-  ]
+  {
+    "name": "Invalid Build",
+    "items": [
+      {
+        "product_id": 999999,
+        "quantity": 0
+      }
+    ]
+  }
 }
 
 script:post-response {
-  const responseData = res.body;
-  
-  if (responseData && responseData.error) {
-    console.log('Error response received as expected:');
-    console.log('Error message:', responseData.error);
+  if (res.status === 400) {
+    console.log('Test passed: Received expected bad request response');
   } else {
-    console.error('Expected error response but got:', responseData);
+    console.error('Test failed: Expected 400 status code');
   }
-} 
+}
