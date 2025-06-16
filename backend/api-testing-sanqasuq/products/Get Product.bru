@@ -1,0 +1,15 @@
+meta {
+  name: Get Product
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{product_url}}/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: {{created_product_id}}
+}

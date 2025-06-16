@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:17
+    environment:
+        POSTGRES_DB: sanqa-suq
+        POSTGRES_USER: sanqa-suq
+        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+        - app-network
+  backend: 
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - db
+    networks:
+        - app-network
+volumes:
+  db_data:
+networks:
+  app-network:
+    driver: bridge
