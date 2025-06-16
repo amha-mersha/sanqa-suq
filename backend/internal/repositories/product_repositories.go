@@ -30,10 +30,27 @@ func (repository *ProductRepository) FetchAllProducts(ctx context.Context) ([]*m
 	}
 	defer rows.Close()
 
-	products, err := pgx.CollectRows(rows, pgx.RowToStructByPos[*models.Products])
-	if err != nil {
-		return nil, errs.InternalError("failed to collect product rows", err)
+	var products []*models.Products
+	for rows.Next() {
+		product := &models.Products{}
+		if err := rows.Scan(
+			&product.ProductID,
+			&product.CategoryID,
+			&product.BrandID,
+			&product.Name,
+			&product.Description,
+			&product.Price,
+			&product.StockQuantity,
+		); err != nil {
+			return nil, errs.InternalError("failed to scan product row", err)
+		}
+		products = append(products, product)
 	}
+
+	if err = rows.Err(); err != nil {
+		return nil, errs.InternalError("error iterating product rows", err)
+	}
+
 	return products, nil
 }
 
@@ -210,4 +227,18 @@ func (repository *ProductRepository) UpdateProduct(ctx context.Context, productI
 	}
 
 	return nil
+}
+
+func (repository *ProductRepository) GetProductSpecifications(ctx context.Context, productId int) ([]*models.ProductSpecifications, error) {
+	query := `SELECT product_id, spec_name, spec_value FROM product_specifications WHERE product_id = $1`
+	rows, err := repository.DB.Pool.Query(ctx, query, productId)
+	if err != nil {
+		return nil, errs.InternalError(fmt.Sprintf("failed to fetch specifications for product ID %d", productId), err)
+	}
+	defer rows.Close()
+	specifications, err := pgx.CollectRows(rows, pgx.RowToStructByPos[*models.ProductSpecifications])
+	if err != nil {
+		return nil, errs.InternalError(fmt.Sprintf("failed to collect specifications for product ID %d", productId), err)
+	}
+	return specifications, nil
 }
