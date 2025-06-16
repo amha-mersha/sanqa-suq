@@ -5,17 +5,17 @@ meta {
 }
 
 get {
-  url: {{categories_url}}/:id/?limit={{created_category_id}}
+  url: {{categories_url}}/:id/?limit=4
   body: none
   auth: inherit
 }
 
 params:query {
-  limit: {{created_category_id}}
+  limit: 4
 }
 
 params:path {
-  id: 4
+  id: {{created_category_id}}4
 }
 
 script:pre-request {
