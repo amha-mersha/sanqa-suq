@@ -1,12 +1,12 @@
 meta {
-  name: Create Brand
+  name: Get All Brands
   type: http
-  seq: 5
+  seq: 2
 }
 
-post {
-  url: {{brand_url}}/add
-  body: json
+get {
+  url: {{brand_url}}
+  body: none
   auth: inherit
 }
 

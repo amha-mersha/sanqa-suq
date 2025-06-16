@@ -20,4 +20,12 @@ run:
 	air
 
 build:
-	docker-compose build
+	docker-compose up -d --build
+up:
+	docker compose up -d 
+down:
+	docker compose down --remove-orphans
+downrm:
+	docker compose down -v
+dev: 
+	docker compose down && docker compose up -d --build && docker compose logs -f

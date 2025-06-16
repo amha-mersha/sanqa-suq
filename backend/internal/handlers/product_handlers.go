@@ -88,6 +88,24 @@ func (handler *ProductHandler) GetProduct(ctx *gin.Context) {
 
 }
 
+func (handler *ProductHandler) GetProductSpecifications(ctx *gin.Context) {
+	param := ctx.Param("id")
+	productId, errConv := strconv.Atoi(param)
+	if errConv != nil {
+		ctx.Error(errs.BadRequest("INVALID_PRODUCT_ID", errConv))
+		return
+	}
+	product, err := handler.service.GetProductSpecifications(ctx, productId)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"message": "PRODUCT_FETCHED_SUCCESSFULLY", "data": struct {
+		Product models.Products `json:"product"`
+	}{Product: *product},
+	})
+}
+
 func (handler *ProductHandler) GetAllProducts(ctx *gin.Context) {
 	products, err := handler.service.GetAllProducts(ctx)
 	if err != nil {

@@ -26,7 +26,7 @@ func (handler *CategoryHandler) GetAllCategroies(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"data": categoryList})
+	ctx.JSON(http.StatusOK, gin.H{"data": categoryList, "message": "CATEGORIES_RETRIEVED_SUCCESSFULLY"})
 }
 
 func (handler *CategoryHandler) CreateCategory(ctx *gin.Context) {

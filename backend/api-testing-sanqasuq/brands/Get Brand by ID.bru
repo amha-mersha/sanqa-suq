@@ -1,13 +1,17 @@
 meta {
-  name: Create Brand
+  name: Get Brand by ID
   type: http
-  seq: 5
+  seq: 4
 }
 
-post {
-  url: {{brand_url}}/add
-  body: json
+get {
+  url: {{brand_url}}/:id
+  body: none
   auth: inherit
+}
+
+params:path {
+  id: {{created_brand_id}}
 }
 
 body:json {
