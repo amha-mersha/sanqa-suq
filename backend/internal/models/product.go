@@ -18,3 +18,11 @@ type ProductSpecifications struct {
 	SpecName  string `json:"spec_name"`
 	SpecValue string `json:"spec_value"`
 }
+type Review struct {
+	ReviewId   int       `json:"review_id"`
+	UserId     int       `json:"user_id"`
+	ProductId  int       `json:"product_id"`
+	Rating     int       `json:"rating"`
+	Comment    string    `json:"comment"`
+	ReviewDate time.Time `json:"review_date"`
+}
