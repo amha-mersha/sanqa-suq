@@ -15,13 +15,3 @@ func NewProductRoutes(mainRouter *gin.RouterGroup, productHanlder *handlers.Prod
 	productRoute.GET("", productHanlder.GetAllProducts)
 	productRoute.GET("/get-by-category/:category_id", productHanlder.GetProductsByCategoryID)
 }
-
-func NewReviewRoutes(mainRouter *gin.RouterGroup, reviewHandler *handlers.ProductHandler) {
-	reviewRoute := mainRouter.Group("/review")
-
-	reviewRoute.POST("/add", reviewHandler.AddNewReview)
-	reviewRoute.PUT("/update/:id", reviewHandler.UpdateReview)
-	reviewRoute.DELETE("/remove/:id", reviewHandler.RemoveReview)
-	reviewRoute.GET("/:id", reviewHandler.GetReviewByID)
-
-}
