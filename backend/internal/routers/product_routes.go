@@ -12,6 +12,6 @@ func NewProductRoutes(mainRouter *gin.RouterGroup, productHanlder *handlers.Prod
 	productRoute.PUT("/update:id", productHanlder.UpdateProduct)
 	productRoute.DELETE("/remove:id", productHanlder.RemoveProduct)
 	productRoute.GET("/:id", productHanlder.GetProduct)
+	productRoute.GET("/specs/:id", productHanlder.GetProductSpecifications)
 	productRoute.GET("", productHanlder.GetAllProducts)
-	productRoute.GET("/get-by-category/:category_id", productHanlder.GetProductsByCategoryID)
 }

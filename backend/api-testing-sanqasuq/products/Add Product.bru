@@ -13,27 +13,11 @@ post {
 body:json {
   {
     "category_id": 1,
-    "brand_id": 101,
+    "brand_id": 1,
     "name": "Wireless Headphones",
     "description": "High-quality wireless headphones with noise cancellation and 20-hour battery life.",
     "price": 99.99,
     "stock_quantity": 50
-  }
-}
-
-script:post-response {
-  const response = bru.getBody();
-  
-  if (response) {
-    try {
-      const data = JSON.parse(response);
-      // Extract product_id for Products
-      if (data.product_id) {
-        bru.setEnvVar('created_product_id', data.product_id);
-      }
-    } catch (error) {
-      console.error('Failed to parse response or set environment variables:', error);
-    }
   }
 }
 

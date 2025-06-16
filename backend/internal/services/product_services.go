@@ -104,3 +104,17 @@ func (service *ProductService) GetProductsByCategoryID(ctx context.Context, cate
 	}
 	return service.repository.FetchProductsByCategoryID(ctx, categoryId)
 }
+
+func (service *ProductService) GetProductSpecifications(ctx context.Context, productId int) (*models.Products, error) {
+	if productId < 0 {
+		return nil, errs.BadRequest("INVALID_PRODUCT_ID", nil)
+	}
+	product, err := service.repository.FindProductByID(ctx, productId)
+	if err != nil {
+		return nil, errs.InternalError("failed to fetch product specifications", err)
+	}
+	if product == nil {
+		return nil, errs.NotFound("PRODUCT_NOT_FOUND", nil)
+	}
+	return product, nil
+}
