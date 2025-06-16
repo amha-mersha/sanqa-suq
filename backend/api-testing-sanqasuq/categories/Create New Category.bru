@@ -13,8 +13,21 @@ post {
 body:json {
   // CreateCategoryDTO - valid example with parent
   {
-    "name": "Laptops",
-    "parent_category_id": 1
+    "name": "Laptops"
+  }
+  
+}
+
+script:post-response {
+  // This script runs after the request and extracts the category_id from the response JSON
+  // and sets it as an environment variable for use in subsequent requests.
+  
+  const responseData = res.body;
+  
+  if (responseData && typeof responseData.data.category_id !== 'undefined') {
+    // Set the environment variable 'created_category_id' with the extracted ID
+    bru.setEnvVar('created_category_id', responseData.category_id);} else {
+    console.error('Failed to extract category_id from response body.');
   }
   
 }

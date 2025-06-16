@@ -12,7 +12,7 @@ CREATE TYPE auth_provider AS ENUM ('local', 'google');
 
 -- 1. Users Table
 CREATE TABLE users (
-    user_id UUID PRIMARY KEY,
+    user_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255),
     first_name VARCHAR(50),
@@ -86,7 +86,7 @@ CREATE TABLE compatibility_rules (
 
 -- 8. Custom_Builds Table
 CREATE TABLE custom_builds (
-    build_id UUID PRIMARY KEY,
+    build_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE SET NULL,
     name VARCHAR(100) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -96,7 +96,7 @@ CREATE TABLE custom_builds (
 
 -- 9. Build_Items Table (Composite PK)
 CREATE TABLE build_items (
-    build_id UUID NOT NULL,
+    build_id UUID NOT NULL DEFAULT uuid_generate_v4(),
     product_id INTEGER NOT NULL,
     quantity INTEGER NOT NULL DEFAULT 1,
     PRIMARY KEY (build_id, product_id),

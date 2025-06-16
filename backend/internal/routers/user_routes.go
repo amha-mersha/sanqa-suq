@@ -8,15 +8,15 @@ import (
 
 func NewUserRoutes(mainRouter *gin.RouterGroup, userHandler *handlers.UserHandler, middleware *middlewares.AuthMiddleware) {
 	userRoute := mainRouter.Group("/user")
-	userRoute.Use(middleware.AuthMiddleware())
 
 	/*
 		POST /api/users/register
 		Data: { email, password, first_name, last_name, phone }
 		Response: { user_id, email, role }
 	*/
-	userRoute.POST("/register", userHandler.UserRegister)
+	userRoute.POST("/signup", userHandler.UserRegister)
 
+	userRoute.Use(middleware.AuthMiddleware())
 	/*
 		POST /api/users/login
 		Data: { email, password }

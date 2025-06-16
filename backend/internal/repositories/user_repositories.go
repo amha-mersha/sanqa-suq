@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/amha-mersha/sanqa-suq/internal/database"
@@ -85,23 +86,40 @@ func (r *UserRepository) InsertUser(ctx context.Context, user *models.User) erro
 	return nil
 }
 
-func (r *UserRepository) UpdateUser(ctx context.Context, userId string, updateFields map[string]interface{}) error {
+func (r *UserRepository) UpdateUser(ctx context.Context, userId string, updateFields map[string]any) (*models.User, error) {
 	setClauses := []string{}
-	values := []interface{}{}
+	values := []any{}
 	i := 1
 	for field, value := range updateFields {
-		setClauses = append(setClauses, field+" = $"+string(i))
+		setClauses = append(setClauses, field+" = $"+strconv.Itoa(i))
 		values = append(values, value)
 		i++
 	}
 	values = append(values, userId)
-	query := fmt.Sprintf("UPDATE users SET %s WHERE user_id = $%d", strings.Join(setClauses, ", "), i)
-	_, err := r.DB.Pool.Exec(ctx, query, values...)
+	query := fmt.Sprintf(`
+		UPDATE users 
+		SET %s 
+		WHERE user_id = $%d 
+		RETURNING user_id, email, first_name, last_name, phone, role, created_at, provider, provider_id
+	`, strings.Join(setClauses, ", "), i)
+
+	var updatedUser models.User
+	err := r.DB.Pool.QueryRow(ctx, query, values...).Scan(
+		&updatedUser.ID,
+		&updatedUser.Email,
+		&updatedUser.FirstName,
+		&updatedUser.LastName,
+		&updatedUser.Phone,
+		&updatedUser.Role,
+		&updatedUser.CreatedAt,
+		&updatedUser.Provider,
+		&updatedUser.ProviderID,
+	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return errs.NotFound("User not found", err)
+			return nil, errs.NotFound("User not found", err)
 		}
-		return errs.InternalError("Failed to update user", err)
+		return nil, errs.InternalError("Failed to update user", err)
 	}
-	return nil
+	return &updatedUser, nil
 }

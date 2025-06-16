@@ -8,6 +8,7 @@ import (
 	"github.com/amha-mersha/sanqa-suq/internal/auth"
 	"github.com/amha-mersha/sanqa-suq/internal/dtos"
 	errs "github.com/amha-mersha/sanqa-suq/internal/errors"
+	"github.com/amha-mersha/sanqa-suq/internal/middlewares"
 	"github.com/amha-mersha/sanqa-suq/internal/models"
 	"github.com/amha-mersha/sanqa-suq/internal/repositories"
 	"github.com/amha-mersha/sanqa-suq/internal/utils"
@@ -85,23 +86,29 @@ func (s *UserService) LoginUser(ctx context.Context, userLoginDTO *dtos.UserLogi
 	return token, nil
 }
 
-func (s *UserService) UpdateUser(ctx context.Context, userId string, userUpdateDTO *dtos.UserUpdateDTO) error {
-	updateableFields := make(map[string]interface{})
+func (s *UserService) UpdateUser(ctx context.Context, userId string, userUpdateDTO *dtos.UserUpdateDTO) (*models.User, error) {
+	//check if the user trying to update is him/herself
+	claims, ok := ctx.Value(middlewares.UserClaimsKey).(*auth.CustomClaims)
+	if !ok || claims.UserID != userId {
+		return nil, errs.Forbidden("FORBIDDEN", errors.New("you can only update your own profile"))
+	}
+	//start building the updateable fields map
+	updateableFields := make(map[string]any)
 	if userUpdateDTO.FirstName != nil {
 		if *userUpdateDTO.FirstName == "" {
-			return errs.BadRequest("INVALID_FIRST_NAME", errors.New("first name cannot be empty"))
+			return nil, errs.BadRequest("INVALID_FIRST_NAME", errors.New("first name cannot be empty"))
 		}
 		updateableFields["first_name"] = *userUpdateDTO.FirstName
 	}
 	if userUpdateDTO.LastName != nil {
 		if *userUpdateDTO.LastName == "" {
-			return errs.BadRequest("INVALID_LAST_NAME", errors.New("last name cannot be empty"))
+			return nil, errs.BadRequest("INVALID_LAST_NAME", errors.New("last name cannot be empty"))
 		}
 		updateableFields["last_name"] = *userUpdateDTO.LastName
 	}
 	if userUpdateDTO.Phone != nil {
 		if !utils.ValidatePhoneNumber(*userUpdateDTO.Phone) {
-			return errs.BadRequest("INVALID_PHONE", errors.New("phone number format is invalid"))
+			return nil, errs.BadRequest("INVALID_PHONE", errors.New("phone number format is invalid"))
 		}
 		updateableFields["phone"] = *userUpdateDTO.Phone
 	}
@@ -109,11 +116,11 @@ func (s *UserService) UpdateUser(ctx context.Context, userId string, userUpdateD
 		if slices.Contains(models.UserRoles, *userUpdateDTO.Role) {
 			updateableFields["role"] = userUpdateDTO.Role
 		} else {
-			return errs.BadRequest("INVALID_ROLE", errors.New("role must be one of the predefined roles"))
+			return nil, errs.BadRequest("INVALID_ROLE", errors.New("role must be one of the predefined roles"))
 		}
 	}
 	if len(updateableFields) == 0 {
-		return errs.BadRequest("NO_FIELDS_TO_UPDATE", errors.New("no valid fields provided for update"))
+		return nil, errs.BadRequest("NO_FIELDS_TO_UPDATE", errors.New("no valid fields provided for update"))
 	}
 	return s.repository.UpdateUser(ctx, userId, updateableFields)
 }

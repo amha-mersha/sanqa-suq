@@ -32,15 +32,24 @@ func (serivce *CategoryService) CreateCategory(ctx context.Context, newCategory 
 }
 
 func (s *CategoryService) GetCategoryById(ctx context.Context, categoryId string) (*models.Categories, error) {
-	category, err := s.repository.GetCategoryById(ctx, categoryId)
+	convCtgryId, err := strconv.Atoi(categoryId)
+	if err != nil {
+		return nil, errs.BadRequest("INVALID_CATEGORY_ID", err)
+	}
+	category, err := s.repository.GetCategoryById(ctx, convCtgryId)
 	return category, err
 }
 
-func (s *CategoryService) GetCategoryWithChildren(ctx context.Context, categoryId string, limit int) (map[string]any, error) {
-	return s.repository.FetchCategoryTree(ctx, categoryId, limit)
+func (s *CategoryService) GetCategoryWithChildren(ctx context.Context, categoryId string, limit int) ([]*models.CategoryNode, error) {
+	convertedCategoryId, err := strconv.Atoi(categoryId)
+	if err != nil {
+		return nil, errs.BadRequest("INVALID_CATEGORY_ID", err)
+	}
+	return s.repository.FetchCategoryTree(ctx, convertedCategoryId, limit)
 }
 
 func (s *CategoryService) UpdateCategory(ctx context.Context, categoryId string, updateData *dtos.UpdateCategoryDTO) error {
+	// check which fields are being updated and update only those
 	updateFields := make(map[string]any)
 	convertedCategoryId, err := strconv.Atoi(categoryId)
 	if err != nil {
@@ -53,6 +62,17 @@ func (s *CategoryService) UpdateCategory(ctx context.Context, categoryId string,
 		updateFields["category_name"] = *updateData.Name
 	}
 	if updateData.ParentCategoryID != nil {
+		// validate there is no loop in the requested update
+		descendants, err := s.repository.FetchCategoryDescendants(ctx, convertedCategoryId)
+		if err != nil {
+			return err
+		}
+		for _, descendant := range descendants {
+			if descendant.CategoryID == *updateData.ParentCategoryID {
+				return errs.BadRequest("PARENT_CATEGORY_CANNOT_BE_A_DESCENDANT", nil)
+			}
+		}
+
 		updateFields["parent_category_id"] = *updateData.ParentCategoryID
 	}
 	if len(updateFields) == 0 {

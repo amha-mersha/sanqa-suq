@@ -1,0 +1,15 @@
+meta {
+  name: Get Products by Category ID
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{product_url}}/get-by-category/:category_id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  category_id: {{created_category_id}}
+}

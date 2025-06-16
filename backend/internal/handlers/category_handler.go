@@ -55,23 +55,24 @@ func (h *CategoryHandler) GetCategory(ctx *gin.Context) {
 		ctx.Error(errs.BadRequest("INVALID_LIMIT_VALUE", err))
 		return
 	}
-	if limit == 0 {
 
+	if limit == 0 {
 		category, err := h.serivce.GetCategoryById(ctx, categoryId)
 		if err != nil {
 			ctx.Error(err)
 			return
 		}
-		ctx.JSON(http.StatusOK, gin.H{"data": category})
+		ctx.JSON(http.StatusOK, gin.H{"data": category, "message": "CATEGORY_RETRIEVED_SUCCESSFULLY"})
 	} else {
 		categories, err := h.serivce.GetCategoryWithChildren(ctx, categoryId, limit)
 		if err != nil {
 			ctx.Error(err)
 			return
 		}
-		ctx.JSON(http.StatusOK, gin.H{"data": categories})
+		ctx.JSON(http.StatusOK, gin.H{"data": categories, "message": "CATEGORY_WITH_CHILDREN_RETRIEVED_SUCCESSFULLY"})
 	}
 }
+
 func (handler *CategoryHandler) UpdateCategory(ctx *gin.Context) {
 	var updateData dtos.UpdateCategoryDTO
 	if err := ctx.ShouldBindBodyWithJSON(&updateData); err != nil {
@@ -90,6 +91,7 @@ func (handler *CategoryHandler) UpdateCategory(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "CATEGORY_UPDATED_SUCCESSFULLY"})
 }
+
 func (handler *CategoryHandler) DeleteCategory(ctx *gin.Context) {
 	categoryId := ctx.Param("id")
 	if categoryId == "" {

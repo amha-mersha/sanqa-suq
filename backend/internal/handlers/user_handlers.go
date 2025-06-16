@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/amha-mersha/sanqa-suq/internal/dtos"
+	"github.com/amha-mersha/sanqa-suq/internal/models"
 	"github.com/amha-mersha/sanqa-suq/internal/services"
 	"github.com/gin-gonic/gin"
 )
@@ -50,12 +51,15 @@ func (h *UserHandler) UpdateUser(ctx *gin.Context) {
 		return
 	}
 	userId := ctx.Param("user_id")
-	err := h.service.UpdateUser(ctx, userId, &userUpdateDTO)
+	updatedUser, err := h.service.UpdateUser(ctx, userId, &userUpdateDTO)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"message": "USER_UPDATED_SUCCESSFULLY"})
+	ctx.JSON(http.StatusOK, gin.H{"message": "USER_UPDATED_SUCCESSFULLY", "data": struct {
+		User models.User `json:"updated_user"`
+	}{User: *updatedUser}})
+
 }
 func (h *UserHandler) GetUserById(ctx *gin.Context) {
 	userId := ctx.Param("user_id")
