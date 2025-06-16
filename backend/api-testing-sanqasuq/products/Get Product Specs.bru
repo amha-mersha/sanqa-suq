@@ -1,0 +1,15 @@
+meta {
+  name: Get Product Specs
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{product_url}}/specs/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: {{created_product_id}}
+}

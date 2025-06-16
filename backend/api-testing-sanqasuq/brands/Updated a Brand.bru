@@ -1,0 +1,22 @@
+meta {
+  name: Updated a Brand
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{brand_url}}/update/:id
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: {{created_brand_id}}
+}
+
+body:json {
+  {
+    "name": "TechTrend",
+    "description": ""
+  }
+}
