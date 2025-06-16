@@ -1,0 +1,15 @@
+meta {
+  name: Get Category Invalid ID
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{categories_url}}/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: invalid-id
+}

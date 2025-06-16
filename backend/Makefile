@@ -29,3 +29,5 @@ downrm:
 	docker compose down -v
 dev: 
 	docker compose down && docker compose up -d --build && docker compose logs -f
+app: 
+	docker compose down && docker compose up -d --build && docker compose logs -f
