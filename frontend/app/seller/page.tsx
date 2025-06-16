@@ -9,106 +9,87 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Edit, Trash2, Package, DollarSign, Tag } from "lucide-react"
 import Image from "next/image"
-
-interface Product {
-  id: string
-  name: string
-  description: string
-  price: number
-  category: string
-  image: string
-  stock: number
-}
-
-const CATEGORIES = [
-  "Laptops",
-  "Smartphones",
-  "PC Components",
-  "Accessories",
-  "Gaming",
-  "Audio",
-  "Networking",
-  "Storage",
-  "Monitors",
-  "Other"
-]
+import { useGetProductsQuery, useGetCategoriesQuery, useGetBrandsQuery } from "@/lib/api"
+import { Product, Category, Brand } from "@/lib/types"
 
 export default function SellerPage() {
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: "1",
-      name: "Gaming Laptop",
-      description: "High-performance gaming laptop with RTX 3080",
-      price: 1499.99,
-      category: "Laptops",
-      image: "/images/laptop.jpg",
-      stock: 10,
-    },
-    {
-      id: "2",
-      name: "iPhone 15 Pro Max",
-      description: "Latest Apple flagship smartphone with advanced camera system",
-      price: 1199.99,
-      category: "Smartphones",
-      image: "/images/phone.jpg",
-      stock: 15,
-    },
-    {
-      id: "3",
-      name: "RTX 4080 Graphics Card",
-      description: "Top-tier graphics card for gaming and creative work",
-      price: 899.99,
-      category: "PC Components",
-      image: "/images/gpu.jpg",
-      stock: 5,
-    },
-    {
-      id: "4",
-      name: "Sony WH-1000XM5 Headphones",
-      description: "Industry-leading noise cancelling headphones",
-      price: 349.99,
-      category: "Accessories",
-      image: "/images/headphones.jpg",
-      stock: 20,
-    },
-  ])
-
   const [isAddingProduct, setIsAddingProduct] = useState(false)
-  const [newProduct, setNewProduct] = useState<Partial<Product>>({
+  const [newProduct, setNewProduct] = useState({
+    category_id: "",
+    brand_id: "",
     name: "",
     description: "",
     price: 0,
-    category: "",
-    image: "/placeholder.svg",
-    stock: 0,
+    stock_quantity: 0,
   })
 
-  const handleAddProduct = () => {
-    if (newProduct.name && newProduct.price) {
-      const product: Product = {
-        id: Date.now().toString(),
-        name: newProduct.name,
-        description: newProduct.description || "",
-        price: newProduct.price,
-        category: newProduct.category || "Uncategorized",
-        image: newProduct.image || "/placeholder.svg",
-        stock: newProduct.stock || 0,
+  const { data: productsData, isLoading: isLoadingProducts } = useGetProductsQuery()
+  const { data: categoriesData, isLoading: isLoadingCategories } = useGetCategoriesQuery()
+  const { data: brandsData, isLoading: isLoadingBrands } = useGetBrandsQuery()
+
+  const products = productsData?.data.products || []
+  const categories = categoriesData?.data.categories || []
+  const brands = brandsData?.data.brands || []
+
+  const handleAddProduct = async () => {
+    if (!newProduct.name || !newProduct.category_id || !newProduct.brand_id || !newProduct.price || !newProduct.stock_quantity) {
+      alert("Please fill in all required fields")
+      return
+    }
+
+    try {
+      const response = await fetch("http://localhost:8080/api/v1/product/add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          category_id: parseInt(newProduct.category_id),
+          brand_id: parseInt(newProduct.brand_id),
+          name: newProduct.name,
+          description: newProduct.description,
+          price: parseFloat(newProduct.price.toString()),
+          stock_quantity: parseInt(newProduct.stock_quantity.toString()),
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to add product")
       }
-      setProducts([...products, product])
+
+      // Reset form
       setNewProduct({
+        category_id: "",
+        brand_id: "",
         name: "",
         description: "",
         price: 0,
-        category: "",
-        image: "/placeholder.svg",
-        stock: 0,
+        stock_quantity: 0,
       })
       setIsAddingProduct(false)
+    } catch (error) {
+      console.error("Error adding product:", error)
+      alert("Failed to add product. Please try again.")
     }
   }
 
-  const handleDeleteProduct = (id: string) => {
-    setProducts(products.filter(product => product.id !== id))
+  const handleDeleteProduct = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this product?")) {
+      return
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/v1/product/${id}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to delete product")
+      }
+    } catch (error) {
+      console.error("Error deleting product:", error)
+      alert("Failed to delete product. Please try again.")
+    }
   }
 
   return (
@@ -166,30 +147,48 @@ export default function SellerPage() {
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Category</label>
                     <Select
-                      value={newProduct.category}
-                      onValueChange={(value) => setNewProduct({ ...newProduct, category: value })}
+                      value={newProduct.category_id}
+                      onValueChange={(value) => setNewProduct({ ...newProduct, category_id: value })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
                       <SelectContent>
-                        {CATEGORIES.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
+                        {categories.map((category: Category) => (
+                          <SelectItem key={category.category_id} value={category.category_id.toString()}>
+                            {category.category_name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Stock</label>
-                    <Input
-                      type="number"
-                      value={newProduct.stock}
-                      onChange={(e) => setNewProduct({ ...newProduct, stock: parseInt(e.target.value) })}
-                      placeholder="Enter stock quantity"
-                    />
+                    <label className="text-sm font-medium">Brand</label>
+                    <Select
+                      value={newProduct.brand_id}
+                      onValueChange={(value) => setNewProduct({ ...newProduct, brand_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a brand" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {brands.map((brand: Brand) => (
+                          <SelectItem key={brand.brand_id} value={brand.brand_id.toString()}>
+                            {brand.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Stock Quantity</label>
+                  <Input
+                    type="number"
+                    value={newProduct.stock_quantity}
+                    onChange={(e) => setNewProduct({ ...newProduct, stock_quantity: parseInt(e.target.value) })}
+                    placeholder="Enter stock quantity"
+                  />
                 </div>
                 <div className="flex justify-end space-x-2">
                   <Button variant="outline" onClick={() => setIsAddingProduct(false)}>
@@ -201,12 +200,12 @@ export default function SellerPage() {
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {products.map((product) => (
-                <Card key={product.id} className="hover:shadow-lg transition-shadow">
+              {products.map((product: Product) => (
+                <Card key={product.product_id} className="hover:shadow-lg transition-shadow">
                   <CardContent className="p-4">
                     <div className="relative h-48 mb-4 bg-gray-100 rounded-lg">
                       <Image
-                        src={product.image}
+                        src={product.image || "/placeholder.svg"}
                         alt={product.name}
                         fill
                         className="object-contain rounded-lg"
@@ -224,7 +223,7 @@ export default function SellerPage() {
                       <div className="flex items-center justify-between">
                         <span className="font-bold">${product.price}</span>
                         <span className="text-sm text-muted-foreground">
-                          Stock: {product.stock}
+                          Stock: {product.stock_quantity}
                         </span>
                       </div>
                       <div className="flex justify-end space-x-2">
@@ -234,7 +233,7 @@ export default function SellerPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleDeleteProduct(product.id)}
+                          onClick={() => handleDeleteProduct(product.product_id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

@@ -92,7 +92,7 @@ export default function ProductsPage() {
       filtered = filtered.filter(
         (product) =>
           product.category.category_name.toLowerCase().includes(categoryParam) ||
-          product.brand.name.toLowerCase().includes(categoryParam),
+          product?.brand?.name.toLowerCase().includes(categoryParam),
       )
     }
 
