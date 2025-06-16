@@ -6,6 +6,7 @@ import (
 	"github.com/amha-mersha/sanqa-suq/internal/configs"
 	"github.com/amha-mersha/sanqa-suq/internal/database"
 	"github.com/amha-mersha/sanqa-suq/internal/routers"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,6 +15,7 @@ func main() {
 	if errConfig != nil {
 		log.Fatal(errConfig)
 	}
+
 	// Initialize database
 	db, err := database.NewDatabase(configs.DatabaseUrl)
 	if err != nil {
@@ -22,9 +24,21 @@ func main() {
 	defer db.Close()
 
 	r := gin.Default()
+
+	// CORS Configuration
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           86400,
+	}))
+
 	errRoute := routers.NewRoute(configs, r)
 	if errRoute != nil {
 		log.Fatal(errRoute)
 	}
+
 	r.Run()
 }
