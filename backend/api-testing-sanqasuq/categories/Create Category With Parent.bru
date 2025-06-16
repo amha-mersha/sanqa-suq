@@ -1,7 +1,7 @@
 meta {
-  name: Create New Category
+  name: Create Category With Parent
   type: http
-  seq: 1
+  seq: 2
 }
 
 post {
@@ -13,7 +13,8 @@ post {
 body:json {
   // CreateCategoryDTO - valid example with parent
   {
-    "name": "Laptops"
+    "name": "Gaming Laptops",
+    "parent_id": "{{created_category_id}}"
   }
 }
 
@@ -21,8 +22,8 @@ script:post-response {
   const responseData = res.body;
   
   if (responseData && responseData.data && responseData.data.category_id) {
-    bru.setEnvVar('created_category_id', responseData.data.category_id);
-    console.log('Created category ID:', responseData.data.category_id);
+    bru.setEnvVar('child_category_id', responseData.data.category_id);
+    console.log('Created child category ID:', responseData.data.category_id);
   } else {
     console.error('Failed to extract category_id from response body.');
   }

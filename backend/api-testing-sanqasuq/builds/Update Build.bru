@@ -1,0 +1,27 @@
+meta {
+  name: Update Build
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{build_url}}/:id
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: {{created_build_id}}
+}
+
+body:json {
+  {
+    "name": "Updated Gaming PC Build",
+    "items": [
+      {
+        "product_id": {{created_product_id}},
+        "quantity": 2
+      }
+    ]
+  }
+} 

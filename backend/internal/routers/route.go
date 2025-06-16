@@ -61,5 +61,10 @@ func NewRoute(config *configs.Config, rtr *gin.Engine) error {
 	brandHandler := handlers.NewBrandHandler(brandService)
 	NewBrandRoutes(apiRouter, brandHandler)
 
+	buildRepo := repositories.NewBuildRepository(db)
+	buildService := services.NewBuildService(buildRepo)
+	buildHandler := handlers.NewBuildHandler(buildService)
+	NewBuildRoutes(apiRouter, buildHandler, authMiddleware)
+
 	return nil
 }

@@ -1,0 +1,15 @@
+meta {
+  name: Delete Category Invalid ID
+  type: http
+  seq: 10
+}
+
+delete {
+  url: {{categories_url}}/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: invalid-id
+}

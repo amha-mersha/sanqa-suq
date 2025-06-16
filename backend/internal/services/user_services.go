@@ -8,7 +8,6 @@ import (
 	"github.com/amha-mersha/sanqa-suq/internal/auth"
 	"github.com/amha-mersha/sanqa-suq/internal/dtos"
 	errs "github.com/amha-mersha/sanqa-suq/internal/errors"
-	"github.com/amha-mersha/sanqa-suq/internal/middlewares"
 	"github.com/amha-mersha/sanqa-suq/internal/models"
 	"github.com/amha-mersha/sanqa-suq/internal/repositories"
 	"github.com/amha-mersha/sanqa-suq/internal/utils"
@@ -26,36 +25,36 @@ func NewUserService(repository *repositories.UserRepository, jwtService *auth.JW
 	}
 }
 
-func (s *UserService) RegisterUser(ctx context.Context, userRegisterDTO *dtos.UserRegisterDTO) error {
+func (s *UserService) RegisterUser(ctx context.Context, userRegisterDTO *dtos.UserRegisterDTO) (*models.User, error) {
 	//Checking for valid User
 	if !utils.ValidatePassword(userRegisterDTO.Password) {
-		return errs.BadRequest("INVALID_PASSWORD", errors.New("password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character"))
+		return nil, errs.BadRequest("INVALID_PASSWORD", errors.New("password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character"))
 	}
 	//check email format and uniqueness
 	if !utils.ValidateEmail(userRegisterDTO.Email) {
-		return errs.BadRequest("INVALID_EMAIL", errors.New("email format is invalid"))
+		return nil, errs.BadRequest("INVALID_EMAIL", errors.New("email format is invalid"))
 	}
 	existingUser, errExisiting := s.repository.FindUserByEmail(ctx, userRegisterDTO.Email)
 	if errExisiting == nil && existingUser != nil {
-		return errs.Conflict("EMAIL_ALREADY_EXISTS", errors.New("email is already registered"))
+		return nil, errs.Conflict("EMAIL_ALREADY_EXISTS", errors.New("email is already registered"))
 	}
 	if !utils.ValidatePhoneNumber(userRegisterDTO.Phone) {
-		return errs.BadRequest("INVALID_PHONE", errors.New("phone number format is invalid"))
+		return nil, errs.BadRequest("INVALID_PHONE", errors.New("phone number format is invalid"))
 	}
 	if !slices.Contains(models.UserRoles, userRegisterDTO.Role) {
-		return errs.BadRequest("INVALID_ROLE", errors.New("role must be one of the predefined roles"))
+		return nil, errs.BadRequest("INVALID_ROLE", errors.New("role must be one of the predefined roles"))
 	}
 	// Check if provider is valid and if provider ID is provided for non-local providers
 	if !slices.Contains(models.UserProviders, userRegisterDTO.Provider) {
-		return errs.BadRequest("INVALID_PROVIDER", errors.New("provider must be one of the predefined providers"))
+		return nil, errs.BadRequest("INVALID_PROVIDER", errors.New("provider must be one of the predefined providers"))
 	}
 	if userRegisterDTO.Provider != "local" && userRegisterDTO.ProviderID == "" {
-		return errs.BadRequest("MISSING_PROVIDER_ID", errors.New("provider ID is required for non-local providers"))
+		return nil, errs.BadRequest("MISSING_PROVIDER_ID", errors.New("provider ID is required for non-local providers"))
 	}
 
 	hashedPassword, err := utils.HashPassword(userRegisterDTO.Password)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	newUser := &models.User{
 		FirstName:    userRegisterDTO.FirstName,
@@ -67,31 +66,29 @@ func (s *UserService) RegisterUser(ctx context.Context, userRegisterDTO *dtos.Us
 		Provider:     userRegisterDTO.Provider,
 		ProviderID:   &userRegisterDTO.ProviderID,
 	}
-	errInsert := s.repository.InsertUser(ctx, newUser)
-	return errInsert
+	insertedUser, errInsert := s.repository.InsertUser(ctx, newUser)
+	if errInsert != nil {
+		return nil, errInsert
+	}
+	return insertedUser, nil
 }
 
-func (s *UserService) LoginUser(ctx context.Context, userLoginDTO *dtos.UserLoginDTO) (string, error) {
+func (s *UserService) LoginUser(ctx context.Context, userLoginDTO *dtos.UserLoginDTO) (string, *models.User, error) {
 	checkoutUser, err := s.repository.FindUserByEmail(ctx, userLoginDTO.Email)
 	if err != nil || checkoutUser == nil {
-		return "", err
+		return "", nil, err
 	}
 	if !utils.ComparePasswords(userLoginDTO.Password, checkoutUser.PasswordHash) {
-		return "", errs.Unauthorized("INVALID_CREDENTIALS", errors.New("email or password is incorrect"))
+		return "", nil, errs.Unauthorized("INVALID_CREDENTIALS", errors.New("email or password is incorrect"))
 	}
 	token, err := s.authService.GenerateToken(checkoutUser.ID, checkoutUser.Role, checkoutUser.Email, checkoutUser.Provider, *checkoutUser.ProviderID)
 	if err != nil {
-		return "", errs.InternalError("TOKEN_GENERATION_FAILED", err)
+		return "", nil, errs.InternalError("TOKEN_GENERATION_FAILED", err)
 	}
-	return token, nil
+	return token, checkoutUser, nil
 }
 
 func (s *UserService) UpdateUser(ctx context.Context, userId string, userUpdateDTO *dtos.UserUpdateDTO) (*models.User, error) {
-	//check if the user trying to update is him/herself
-	claims, ok := ctx.Value(middlewares.UserClaimsKey).(*auth.CustomClaims)
-	if !ok || claims.UserID != userId {
-		return nil, errs.Forbidden("FORBIDDEN", errors.New("you can only update your own profile"))
-	}
 	//start building the updateable fields map
 	updateableFields := make(map[string]any)
 	if userUpdateDTO.FirstName != nil {

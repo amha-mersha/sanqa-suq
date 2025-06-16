@@ -52,6 +52,8 @@ func (a *AuthMiddleware) AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// Set claims in both gin context and request context
+		c.Set(string(UserClaimsKey), claims)
 		ctx := context.WithValue(c.Request.Context(), UserClaimsKey, claims)
 		c.Request = c.Request.WithContext(ctx)
 		c.Next()

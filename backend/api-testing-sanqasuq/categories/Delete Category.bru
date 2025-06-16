@@ -1,17 +1,13 @@
 meta {
-  name: Get A Category Without Children
+  name: Delete Category
   type: http
-  seq: 4
+  seq: 9
 }
 
-get {
+delete {
   url: {{categories_url}}/:id
   body: none
   auth: inherit
-}
-
-params:query {
-  limit: 0
 }
 
 params:path {

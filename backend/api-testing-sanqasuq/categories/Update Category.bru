@@ -1,19 +1,21 @@
 meta {
-  name: Get A Category Without Children
+  name: Update Category
   type: http
-  seq: 4
+  seq: 7
 }
 
-get {
+put {
   url: {{categories_url}}/:id
-  body: none
+  body: json
   auth: inherit
-}
-
-params:query {
-  limit: 0
 }
 
 params:path {
   id: {{created_category_id}}
+}
+
+body:json {
+  {
+    "name": "Updated Laptops"
+  }
 }

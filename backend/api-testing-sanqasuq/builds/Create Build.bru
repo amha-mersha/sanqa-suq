@@ -1,0 +1,34 @@
+meta {
+  name: Create Build
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{build_url}}
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Gaming PC Build",
+    "items": [
+      {
+        "product_id": {{created_product_id}},
+        "quantity": 1
+      }
+    ]
+  }
+}
+
+script:post-response {
+  const responseData = res.body;
+  
+  if (responseData && responseData.build_id) {
+    bru.setEnvVar('created_build_id', responseData.build_id);
+    console.log('Created build ID:', responseData.build_id);
+  } else {
+    console.error('Failed to extract build_id from response body.');
+  }
+} 

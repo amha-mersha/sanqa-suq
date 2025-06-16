@@ -1,13 +1,21 @@
 meta {
   name: Update User
   type: http
-  seq: 3
+  seq: 4
 }
 
-post {
-  url: {{user_url}}/update
+put {
+  url: {{user_url}}/:user_id
   body: json
-  auth: inherit
+  auth: bearer
+}
+
+params:path {
+  user_id: {{created_user_id}}
+}
+
+auth:bearer {
+  token: {{auth_token}}
 }
 
 body:json {

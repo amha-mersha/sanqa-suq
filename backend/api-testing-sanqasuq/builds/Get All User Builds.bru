@@ -1,0 +1,11 @@
+meta {
+  name: Get All User Builds
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{build_url}}/user
+  body: none
+  auth: inherit
+} 

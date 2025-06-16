@@ -1,0 +1,15 @@
+meta {
+  name: Get Build by ID
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{build_url}}/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: {{created_build_id}}
+} 
