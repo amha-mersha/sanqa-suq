@@ -26,3 +26,14 @@ type CreateProductDTO struct {
 	Price         float64 `json:"price" binding:"required"`
 	StockQuantity int     `json:"stock_quantity" binding:"required"`
 }
+
+type CreateReviewDTO struct {
+	UserID    string `json:"user_id" binding:"required,uuid"`
+	ProductID int    `json:"product_id" binding:"required"`
+	Rating    int    `json:"rating" binding:"required,min=1,max=5"`
+	Comment   string `json:"comment" binding:"required"`
+}
+type UpdateReviewDTO struct {
+	Rating  *int    `json:"rating" binding:"omitempty,min=1,max=5"`
+	Comment *string `json:"comment" binding:"omitempty"`
+}
