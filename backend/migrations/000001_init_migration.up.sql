@@ -4,7 +4,7 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Create ENUM types
-CREATE TYPE user_role AS ENUM ('customer', 'admin');
+CREATE TYPE user_role AS ENUM ('customer', 'admin', 'seller');
 CREATE TYPE address_type AS ENUM ('shipping', 'billing');
 CREATE TYPE order_status AS ENUM ('pending', 'paid', 'shipped', 'delivered', 'cancelled');
 CREATE TYPE payment_method AS ENUM ('telebirr', 'cbe_banking');
