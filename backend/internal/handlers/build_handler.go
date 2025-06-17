@@ -104,3 +104,19 @@ func (h *BuildHandler) UpdateBuild(c *gin.Context) {
 
 	c.JSON(http.StatusOK, response)
 }
+
+func (h *BuildHandler) GetCompatibleProducts(c *gin.Context) {
+	var req dtos.CompatibleProductsRequestDTO
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.Error(errs.BadRequest("INVALID_REQUEST_BODY", err))
+		return
+	}
+
+	products, err := h.buildService.GetCompatibleProducts(c.Request.Context(), req.CategoryID, req.SelectedItems)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, products)
+}
