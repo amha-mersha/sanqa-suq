@@ -12,7 +12,7 @@ func NewUserRoutes(mainRouter *gin.RouterGroup, userHandler *handlers.UserHandle
 	userRoute.POST("/signup", userHandler.UserRegister)
 	userRoute.POST("/login", userHandler.UserLogin)
 
-	userRoute.Use(middleware.AuthMiddleware())
+	// userRoute.Use(middleware.AuthMiddleware())
 
 	userRoute.GET("/:user_id", userHandler.GetUserById)
 	userRoute.PUT("/:user_id", userHandler.UpdateUser)
