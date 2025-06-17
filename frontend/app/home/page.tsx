@@ -248,21 +248,13 @@ export default function HomePage() {
         const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           product.description.toLowerCase().includes(searchQuery.toLowerCase())
         const matchesBrand = selectedBrand === "all" || product.brand_id === parseInt(selectedBrand)
-        const matchesCategory = !categorySearchQuery || 
-          categories.find(c => c.category_id === product.categroy_id)?.category_name.toLowerCase().includes(categorySearchQuery.toLowerCase())
-
-        // Price range filtering
-        let matchesPriceRange = true
-        if (priceRange !== "all") {
-          const [min, max] = priceRange.split("-").map(Number)
-          if (max) {
-            matchesPriceRange = product.price >= min && product.price <= max
-          } else {
-            matchesPriceRange = product.price >= min
-          }
-        }
-
-        return matchesSearch && matchesBrand && matchesCategory && matchesPriceRange
+        const matchesPrice = priceRange === "all" || (
+          priceRange === "under-100" && product.price < 100 ||
+          priceRange === "100-500" && product.price >= 100 && product.price <= 500 ||
+          priceRange === "500-1000" && product.price > 500 && product.price <= 1000 ||
+          priceRange === "over-1000" && product.price > 1000
+        )
+        return matchesSearch && matchesBrand && matchesPrice
       })
       .sort((a, b) => {
         switch (sortBy) {
@@ -270,17 +262,21 @@ export default function HomePage() {
             return a.price - b.price
           case "price-high-low":
             return b.price - a.price
-          case "name-a-z":
+          case "name-asc":
             return a.name.localeCompare(b.name)
-          case "name-z-a":
+          case "name-desc":
             return b.name.localeCompare(a.name)
           default:
             return 0
         }
       })
-  }, [products, searchQuery, selectedBrand, categorySearchQuery, categories, priceRange, sortBy])
+  }, [products, searchQuery, selectedBrand, priceRange, sortBy])
 
   const isLoading = isLoadingProducts || (selectedCategoryId && isLoadingCategoryProducts)
+
+  const handleProductClick = (productId: number) => {
+    router.push(`/products/${productId}`)
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
@@ -459,10 +455,14 @@ export default function HomePage() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-6">
                 {filteredProducts.map((product) => (
-                  <div key={product.product_id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                    <div className="relative h-48 bg-gray-100">
+                  <div
+                    key={product.product_id}
+                    className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+                    onClick={() => handleProductClick(product.product_id)}
+                  >
+                    <div className="relative h-48">
                       <Image
                         src={getRandomProductImage()}
                         alt={product.name}
@@ -471,24 +471,20 @@ export default function HomePage() {
                       />
                     </div>
                     <div className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-gray-500">
-                          {brands.find(b => b.brand_id === product.brand_id)?.name}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          {categories.find(c => c.category_id === product.categroy_id)?.category_name}
-                        </span>
-                      </div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1">{product.name}</h3>
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">{product.description}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-lg font-bold text-indigo-600">${product.price.toFixed(2)}</span>
-                        <button
-                          onClick={() => handleAddToCart(product)}
-                          className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-2 rounded-md transition-all duration-200"
+                      <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xl font-bold text-indigo-600">${product.price.toFixed(2)}</span>
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation() // Prevent card click when clicking the button
+                            handleAddToCart(product)
+                          }}
+                          className="bg-indigo-600 hover:bg-indigo-700"
                         >
+                          <ShoppingCart className="h-4 w-4 mr-2" />
                           Add to Cart
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   </div>

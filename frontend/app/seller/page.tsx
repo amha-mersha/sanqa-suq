@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Edit, Trash2, Package, DollarSign, Tag } from "lucide-react"
+import { Plus, Edit, Trash2, Package, DollarSign, Tag, CreditCard } from "lucide-react"
 import Image from "next/image"
 import { useGetProductsQuery, useGetCategoriesQuery, useGetBrandsQuery, useAddProductMutation } from "@/lib/api"
 import { Product, Category, Brand } from "@/lib/types"
@@ -40,19 +40,8 @@ const dummyOrders = [
   }
 ]
 
-const getRandomProductImage = () => {
-  const images = [
-    "/joshua-ng-1sSfrozgiFk-unsplash.jpg",
-    "/kevin-bhagat-548zkUvqmlw-unsplash.jpg",
-    "/itadaki-YWY_AASpmEI-unsplash.jpg",
-    "/olivier-collet-JMwCe3w7qKk-unsplash.jpg",
-    "/onur-binay-auf3GwpVaOM-unsplash.jpg",
-    "/alienware-Hpaq-kBcYHk-unsplash.jpg",
-    "/pc2.jpg",
-    "/pc1.jpg"
-  ]
-  return images[Math.floor(Math.random() * images.length)]
-}
+// Remove the getRandomProductImage function and replace with a constant
+const DEFAULT_PRODUCT_IMAGE = "/pc1.jpg"
 
 export default function SellerPage() {
   const [isAddingProduct, setIsAddingProduct] = useState(false)
@@ -267,7 +256,7 @@ export default function SellerPage() {
                   <CardContent className="p-4">
                     <div className="relative h-48 mb-4 bg-gray-100 rounded-lg">
                       <Image
-                        src={getRandomProductImage()}
+                        src={DEFAULT_PRODUCT_IMAGE}
                         alt={product.name}
                         fill
                         className="object-contain rounded-lg"
