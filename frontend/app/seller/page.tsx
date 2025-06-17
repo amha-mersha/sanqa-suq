@@ -12,6 +12,48 @@ import Image from "next/image"
 import { useGetProductsQuery, useGetCategoriesQuery, useGetBrandsQuery, useAddProductMutation } from "@/lib/api"
 import { Product, Category, Brand } from "@/lib/types"
 
+// Dummy order data
+const dummyOrders = [
+  {
+    id: 1,
+    user_id: "123e4567-e89b-12d3-a456-426614174000",
+    address_id: 1,
+    total_amount: 299.99,
+    payment_method: "credit_card",
+    status: "pending",
+    created_at: "2024-03-15T10:30:00Z",
+    items: [
+      { product_id: 1, quantity: 2, price: 149.99 }
+    ]
+  },
+  {
+    id: 2,
+    user_id: "123e4567-e89b-12d3-a456-426614174000",
+    address_id: 1,
+    total_amount: 599.99,
+    payment_method: "debit_card",
+    status: "completed",
+    created_at: "2024-03-14T15:45:00Z",
+    items: [
+      { product_id: 2, quantity: 1, price: 599.99 }
+    ]
+  }
+]
+
+const getRandomProductImage = () => {
+  const images = [
+    "/joshua-ng-1sSfrozgiFk-unsplash.jpg",
+    "/kevin-bhagat-548zkUvqmlw-unsplash.jpg",
+    "/itadaki-YWY_AASpmEI-unsplash.jpg",
+    "/olivier-collet-JMwCe3w7qKk-unsplash.jpg",
+    "/onur-binay-auf3GwpVaOM-unsplash.jpg",
+    "/alienware-Hpaq-kBcYHk-unsplash.jpg",
+    "/pc2.jpg",
+    "/pc1.jpg"
+  ]
+  return images[Math.floor(Math.random() * images.length)]
+}
+
 export default function SellerPage() {
   const [isAddingProduct, setIsAddingProduct] = useState(false)
   const [newProduct, setNewProduct] = useState({
@@ -225,7 +267,7 @@ export default function SellerPage() {
                   <CardContent className="p-4">
                     <div className="relative h-48 mb-4 bg-gray-100 rounded-lg">
                       <Image
-                        src={product.image || "/placeholder.svg"}
+                        src={getRandomProductImage()}
                         alt={product.name}
                         fill
                         className="object-contain rounded-lg"
@@ -272,7 +314,49 @@ export default function SellerPage() {
               <CardTitle>Recent Orders</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">No orders yet</p>
+              <div className="grid grid-cols-1 gap-6">
+                {dummyOrders.map((order) => (
+                  <Card key={order.id}>
+                    <CardHeader>
+                      <CardTitle className="flex justify-between items-center">
+                        <span>Order #{order.id}</span>
+                        <span className={`text-sm px-2 py-1 rounded ${
+                          order.status === "completed" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                        }`}>
+                          {order.status}
+                        </span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center">
+                            <DollarSign className="h-4 w-4 mr-2 text-gray-500" />
+                            <span className="font-semibold">${order.total_amount}</span>
+                          </div>
+                          <div className="flex items-center">
+                            <CreditCard className="h-4 w-4 mr-2 text-gray-500" />
+                            <span className="text-gray-600">{order.payment_method}</span>
+                          </div>
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          Ordered on: {new Date(order.created_at).toLocaleDateString()}
+                        </div>
+                        <div className="border-t pt-4">
+                          <h4 className="font-medium mb-2">Order Items:</h4>
+                          {order.items.map((item, index) => (
+                            <div key={index} className="flex justify-between text-sm">
+                              <span>Product #{item.product_id}</span>
+                              <span>Qty: {item.quantity}</span>
+                              <span>${item.price}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

@@ -1,12 +1,15 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useGetProductsQuery, useGetCategoriesQuery, useGetBrandsQuery, useGetProductsByCategoryQuery } from "@/lib/api"
 import type { Product, Category, Brand } from "@/lib/types"
-import { ShoppingCart, Search, PanelRightClose, PanelLeftClose, ChevronRight, ArrowLeft, Package } from "lucide-react"
+import { ShoppingCart, Search, PanelRightClose, PanelLeftClose, ChevronRight, ArrowLeft, Package, Store } from "lucide-react"
 import Link from "next/link"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import Image from "next/image"
+import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
+import { isAuthenticated, isSeller } from "@/lib/auth"
 
 function NestedCategorySidebar({ onCategorySelect }: { onCategorySelect: (categoryId: number) => void }) {
   const [selectedCategory, setSelectedCategory] = useState<any>(null)
@@ -200,6 +203,8 @@ export default function HomePage() {
 
   const [cartItems, setCartItems] = useState<any[]>([])
 
+  const router = useRouter()
+
   const handleAddToCart = (product: Product) => {
     setCartItems((prev) => {
       const existing = prev.find((item) => item.product_id === product.product_id)
@@ -326,6 +331,18 @@ export default function HomePage() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Products</h1>
+          {isAuthenticated() && isSeller() && (
+            <Button
+              onClick={() => router.push("/seller")}
+              className="flex items-center gap-2"
+            >
+              <Store className="h-5 w-5" />
+              Seller Dashboard
+            </Button>
+          )}
+        </div>
         <div className="relative">
           {/* Sidebar Overlay */}
           {showSidebar && (
