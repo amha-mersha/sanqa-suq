@@ -1,0 +1,34 @@
+meta {
+  name: Delete Address
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{address_url}}/:id
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+script:pre-request {
+  // Use the address ID from the created address
+  const addressId = env.get('created_address_id');
+  if (!addressId) {
+    console.error('No address ID found. Please create an address first.');
+    return;
+  }
+  
+  // Replace :id in the URL with the actual address ID
+  req.url = req.url.replace(':id', addressId);
+}
+
+script:post-response {
+  if (res.status === 204) {
+    console.log('Address deleted successfully');
+  } else {
+    console.error('Failed to delete address:', res.body);
+  }
+} 

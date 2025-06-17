@@ -1,0 +1,48 @@
+meta {
+  name: Create Address
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{address_url}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+body:json {
+  {
+    "street": "123 Main St",
+    "city": "Addis Ababa",
+    "state": "Addis Ababa",
+    "postal_code": "1000",
+    "country": "Ethiopia",
+    "type": "shipping"
+  }
+}
+
+script:post-response {
+  const responseData = res.body;
+  
+  if (responseData) {
+    console.log('Address created successfully:');
+    console.log(`  - Address ID: ${responseData.address_id}`);
+    console.log(`  - Street: ${responseData.street}`);
+    console.log(`  - City: ${responseData.city}`);
+    console.log(`  - State: ${responseData.state}`);
+    console.log(`  - Postal Code: ${responseData.postal_code}`);
+    console.log(`  - Country: ${responseData.country}`);
+    console.log(`  - Type: ${responseData.type}`);
+    
+    // Store the address ID for later use
+    if (responseData.address_id) {
+      env.set('created_address_id', responseData.address_id);
+    }
+  } else {
+    console.error('Failed to create address:', res.body);
+  }
+} 
