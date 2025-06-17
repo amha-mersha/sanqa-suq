@@ -18,6 +18,22 @@ func NewRoute(config *configs.Config, rtr *gin.Engine) error {
 	if err != nil {
 		return err
 	}
+
+	// Add CORS middleware
+	rtr.Use(func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+
+		c.Next()
+	})
+
 	apiRouter := rtr.Group(fmt.Sprintf("/api/%s/", config.Version))
 	apiRouter.Use(middlewares.ErrorHandler())
 	apiRouter.GET("health", handlers.HealthCheckHandler)
