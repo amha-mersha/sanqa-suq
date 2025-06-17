@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/amha-mersha/sanqa-suq/internal/dtos"
+	errs "github.com/amha-mersha/sanqa-suq/internal/errors"
 	"github.com/amha-mersha/sanqa-suq/internal/models"
 	"github.com/amha-mersha/sanqa-suq/internal/repositories"
 )
@@ -19,7 +20,25 @@ func NewBuildService(buildRepo *repositories.BuildRepository) *BuildService {
 	}
 }
 
+func (s *BuildService) validateBuildItems(items []dtos.BuildItemDTO) error {
+	if len(items) == 0 {
+		return errs.BadRequest("build must have at least one item", nil)
+	}
+
+	for _, item := range items {
+		if item.Quantity <= 0 {
+			return errs.BadRequest("quantity must be greater than 0", nil)
+		}
+	}
+
+	return nil
+}
+
 func (s *BuildService) CreateBuild(ctx context.Context, userID string, req *dtos.CreateBuildRequestDTO) (*dtos.BuildResponseDTO, error) {
+	if err := s.validateBuildItems(req.Items); err != nil {
+		return nil, err
+	}
+
 	// Convert DTO to model
 	build := &models.CustomBuild{
 		UserID: userID,
@@ -47,27 +66,11 @@ func (s *BuildService) CreateBuild(ctx context.Context, userID string, req *dtos
 		Name:       result.Name,
 		CreatedAt:  result.CreatedAt.Format(time.RFC3339),
 		TotalPrice: result.TotalPrice,
-		Items: make([]struct {
-			ProductID    int     `json:"product_id"`
-			Quantity     int     `json:"quantity"`
-			ProductName  string  `json:"product_name"`
-			Price        float64 `json:"price"`
-			Description  string  `json:"description"`
-			BrandName    string  `json:"brand_name"`
-			CategoryName string  `json:"category_name"`
-		}, len(result.Items)),
+		Items:      make([]dtos.BuildItemResponseDTO, len(result.Items)),
 	}
 
 	for i, item := range result.Items {
-		response.Items[i] = struct {
-			ProductID    int     `json:"product_id"`
-			Quantity     int     `json:"quantity"`
-			ProductName  string  `json:"product_name"`
-			Price        float64 `json:"price"`
-			Description  string  `json:"description"`
-			BrandName    string  `json:"brand_name"`
-			CategoryName string  `json:"category_name"`
-		}{
+		response.Items[i] = dtos.BuildItemResponseDTO{
 			ProductID:    item.ProductID,
 			Quantity:     item.Quantity,
 			ProductName:  item.ProductName,
@@ -86,19 +89,27 @@ func (s *BuildService) GetUserBuilds(ctx context.Context, userID string) ([]mode
 }
 
 func (s *BuildService) GetBuildByID(ctx context.Context, buildID string) (*models.BuildWithItems, error) {
+	if buildID == "" {
+		return nil, errs.BadRequest("build ID is required", nil)
+	}
 	return s.buildRepo.GetBuildByID(ctx, buildID)
 }
 
 func (s *BuildService) UpdateBuild(ctx context.Context, buildID string, userID string, req *dtos.UpdateBuildRequestDTO) (*dtos.BuildResponseDTO, error) {
+	if buildID == "" {
+		return nil, errs.BadRequest("build ID is required", nil)
+	}
+
+	if err := s.validateBuildItems(req.Items); err != nil {
+		return nil, err
+	}
+
 	// Convert DTO items to model items
-	var items []models.BuildItem
-	if req.Items != nil {
-		items = make([]models.BuildItem, len(req.Items))
-		for i, item := range req.Items {
-			items[i] = models.BuildItem{
-				ProductID: item.ProductID,
-				Quantity:  item.Quantity,
-			}
+	items := make([]models.BuildItem, len(req.Items))
+	for i, item := range req.Items {
+		items[i] = models.BuildItem{
+			ProductID: item.ProductID,
+			Quantity:  item.Quantity,
 		}
 	}
 
@@ -115,27 +126,11 @@ func (s *BuildService) UpdateBuild(ctx context.Context, buildID string, userID s
 		Name:       build.Name,
 		CreatedAt:  build.CreatedAt.Format(time.RFC3339),
 		TotalPrice: build.TotalPrice,
-		Items: make([]struct {
-			ProductID    int     `json:"product_id"`
-			Quantity     int     `json:"quantity"`
-			ProductName  string  `json:"product_name"`
-			Price        float64 `json:"price"`
-			Description  string  `json:"description"`
-			BrandName    string  `json:"brand_name"`
-			CategoryName string  `json:"category_name"`
-		}, len(build.Items)),
+		Items:      make([]dtos.BuildItemResponseDTO, len(build.Items)),
 	}
 
 	for i, item := range build.Items {
-		response.Items[i] = struct {
-			ProductID    int     `json:"product_id"`
-			Quantity     int     `json:"quantity"`
-			ProductName  string  `json:"product_name"`
-			Price        float64 `json:"price"`
-			Description  string  `json:"description"`
-			BrandName    string  `json:"brand_name"`
-			CategoryName string  `json:"category_name"`
-		}{
+		response.Items[i] = dtos.BuildItemResponseDTO{
 			ProductID:    item.ProductID,
 			Quantity:     item.Quantity,
 			ProductName:  item.ProductName,
@@ -143,6 +138,29 @@ func (s *BuildService) UpdateBuild(ctx context.Context, buildID string, userID s
 			Description:  item.Description,
 			BrandName:    item.BrandName,
 			CategoryName: item.CategoryName,
+		}
+	}
+
+	return response, nil
+}
+
+func (s *BuildService) GetCompatibleProducts(ctx context.Context, categoryID int, selectedItems []int) ([]dtos.CompatibleProductDTO, error) {
+	products, err := s.buildRepo.GetCompatibleProducts(ctx, categoryID, selectedItems)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert model to DTO
+	response := make([]dtos.CompatibleProductDTO, len(products))
+	for i, product := range products {
+		response[i] = dtos.CompatibleProductDTO{
+			ProductID:    product.ProductID,
+			ProductName:  product.ProductName,
+			Price:        product.Price,
+			Description:  product.Description,
+			BrandName:    product.BrandName,
+			CategoryName: product.CategoryName,
+			Specs:        product.Specs,
 		}
 	}
 

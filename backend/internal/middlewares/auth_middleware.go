@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"context"
+	"slices"
 	"strings"
 
 	"github.com/amha-mersha/sanqa-suq/internal/auth"
@@ -52,10 +53,55 @@ func (a *AuthMiddleware) AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Set claims in both gin context and request context
-		c.Set(string(UserClaimsKey), claims)
+		// Set claims only in request context
 		ctx := context.WithValue(c.Request.Context(), UserClaimsKey, claims)
 		c.Request = c.Request.WithContext(ctx)
+		c.Next()
+	}
+}
+
+// RequireRole creates a middleware that checks if the user has the required role
+func (a *AuthMiddleware) RequireRole(requiredRole string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Get claims from context
+		claims, exists := c.Request.Context().Value(UserClaimsKey).(*auth.CustomClaims)
+		if !exists {
+			c.Error(errs.Unauthorized("missing claims", nil))
+			c.Abort()
+			return
+		}
+
+		// Check if user has the required role
+		if claims.Role != requiredRole {
+			c.Error(errs.Forbidden("insufficient permissions", nil))
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}
+
+// RequireAnyRole creates a middleware that checks if the user has any of the required roles
+func (a *AuthMiddleware) RequireAnyRole(requiredRoles ...string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Get claims from context
+		claims, exists := c.Request.Context().Value(UserClaimsKey).(*auth.CustomClaims)
+		if !exists {
+			c.Error(errs.Unauthorized("missing claims", nil))
+			c.Abort()
+			return
+		}
+
+		// Check if user has any of the required roles
+		hasRole := slices.Contains(requiredRoles, claims.Role)
+
+		if !hasRole {
+			c.Error(errs.Forbidden("insufficient permissions", nil))
+			c.Abort()
+			return
+		}
+
 		c.Next()
 	}
 }

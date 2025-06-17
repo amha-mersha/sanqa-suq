@@ -27,3 +27,13 @@ type BuildWithItems struct {
 	CustomBuild
 	Items []BuildItem `json:"items"`
 }
+
+type CompatibleProduct struct {
+	ProductID    int               `json:"product_id"`
+	ProductName  string            `json:"product_name"`
+	Price        float64           `json:"price"`
+	Description  string            `json:"description"`
+	BrandName    string            `json:"brand_name"`
+	CategoryName string            `json:"category_name"`
+	Specs        map[string]string `json:"specs"`
+}
