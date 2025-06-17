@@ -37,6 +37,32 @@ export const api = createApi({
       }),
       invalidatesTags: ['Product'],
     }),
+    signup: builder.mutation<any, {
+      first_name: string;
+      last_name: string;
+      email: string;
+      password: string;
+      phone: string;
+      role: "customer" | "seller";
+      provider: string;
+      provider_id: string;
+    }>({
+      query: (userData) => ({
+        url: 'user/signup',
+        method: 'POST',
+        body: userData,
+      }),
+    }),
+    login: builder.mutation<any, {
+      email: string;
+      password: string;
+    }>({
+      query: (credentials) => ({
+        url: 'user/login',
+        method: 'POST',
+        body: credentials,
+      }),
+    }),
   }),
 });
 
@@ -46,4 +72,6 @@ export const {
   useGetCategoriesQuery,
   useGetBrandsQuery,
   useAddProductMutation,
+  useSignupMutation,
+  useLoginMutation,
 } = api; 

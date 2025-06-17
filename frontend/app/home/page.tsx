@@ -174,6 +174,21 @@ function NestedCategorySidebar({ onCategorySelect }: { onCategorySelect: (catego
   )
 }
 
+// Add this function before the HomePage component
+const getRandomProductImage = () => {
+  const images = [
+    "/joshua-ng-1sSfrozgiFk-unsplash.jpg",
+    "/kevin-bhagat-548zkUvqmlw-unsplash.jpg",
+    "/itadaki-YWY_AASpmEI-unsplash.jpg",
+    "/olivier-collet-JMwCe3w7qKk-unsplash.jpg",
+    "/onur-binay-auf3GwpVaOM-unsplash.jpg",
+    "/alienware-Hpaq-kBcYHk-unsplash.jpg",
+    "/pc2.jpg",
+    "/pc1.jpg"
+  ]
+  return images[Math.floor(Math.random() * images.length)]
+}
+
 export default function HomePage() {
   const [showSidebar, setShowSidebar] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -188,12 +203,17 @@ export default function HomePage() {
   const handleAddToCart = (product: Product) => {
     setCartItems((prev) => {
       const existing = prev.find((item) => item.product_id === product.product_id)
+      let updated;
       if (existing) {
-        return prev.map((item) =>
-          item.product_id === product.product_id ? { ...item, quantity: item.quantity + 1 } : item,
+        updated = prev.map((item) =>
+          item.product_id === product.product_id ? { ...item, quantity: item.quantity + 1 } : item
         )
+      } else {
+        updated = [...prev, { product_id: product.product_id, quantity: 1 }]
       }
-      return [...prev, { ...product, quantity: 1 }]
+      // Save to localStorage
+      localStorage.setItem("cart", JSON.stringify(updated))
+      return updated
     })
   }
 
@@ -426,18 +446,12 @@ export default function HomePage() {
                 {filteredProducts.map((product) => (
                   <div key={product.product_id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200">
                     <div className="relative h-48 bg-gray-100">
-                      {product.image ? (
-                        <Image
-                          src={product.image}
-                          alt={product.name}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-indigo-100 to-purple-100">
-                          <Package className="h-12 w-12 text-indigo-400" />
-                        </div>
-                      )}
+                      <Image
+                        src={getRandomProductImage()}
+                        alt={product.name}
+                        fill
+                        className="object-cover"
+                      />
                     </div>
                     <div className="p-4">
                       <div className="flex items-center justify-between mb-2">
