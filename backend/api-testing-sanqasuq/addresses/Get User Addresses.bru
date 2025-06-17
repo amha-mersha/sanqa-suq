@@ -1,0 +1,35 @@
+meta {
+  name: Get User Addresses
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{address_url}}
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+script:post-response {
+  const responseData = res.body;
+  
+  if (responseData && Array.isArray(responseData)) {
+    console.log(`Found ${responseData.length} addresses:`);
+    
+    responseData.forEach((address, index) => {
+      console.log(`\nAddress ${index + 1}:`);
+      console.log(`  - Address ID: ${address.address_id}`);
+      console.log(`  - Street: ${address.street}`);
+      console.log(`  - City: ${address.city}`);
+      console.log(`  - State: ${address.state}`);
+      console.log(`  - Postal Code: ${address.postal_code}`);
+      console.log(`  - Country: ${address.country}`);
+      console.log(`  - Type: ${address.type}`);
+    });
+  } else {
+    console.error('Failed to get addresses:', res.body);
+  }
+} 

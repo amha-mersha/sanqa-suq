@@ -1,0 +1,55 @@
+meta {
+  name: Update Address
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{address_url}}/:id
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+body:json {
+  {
+    "street": "456 New St",
+    "city": "Addis Ababa",
+    "state": "Addis Ababa",
+    "postal_code": "1001",
+    "country": "Ethiopia",
+    "type": "billing"
+  }
+}
+
+script:pre-request {
+  // Use the address ID from the created address
+  const addressId = env.get('created_address_id');
+  if (!addressId) {
+    console.error('No address ID found. Please create an address first.');
+    return;
+  }
+  
+  // Replace :id in the URL with the actual address ID
+  req.url = req.url.replace(':id', addressId);
+}
+
+script:post-response {
+  const responseData = res.body;
+  
+  if (responseData) {
+    console.log('Address updated successfully:');
+    console.log(`  - Address ID: ${responseData.address_id}`);
+    console.log(`  - Street: ${responseData.street}`);
+    console.log(`  - City: ${responseData.city}`);
+    console.log(`  - State: ${responseData.state}`);
+    console.log(`  - Postal Code: ${responseData.postal_code}`);
+    console.log(`  - Country: ${responseData.country}`);
+    console.log(`  - Type: ${responseData.type}`);
+  } else {
+    console.error('Failed to update address:', res.body);
+  }
+}

@@ -50,5 +50,10 @@ func NewRoute(config *configs.Config, rtr *gin.Engine) error {
 	buildHandler := handlers.NewBuildHandler(buildService)
 	NewBuildRoutes(apiRouter, buildHandler, authMiddleware)
 
+	addressRepo := repositories.NewAddressRepository(db)
+	addressService := services.NewAddressService(addressRepo)
+	addressHandler := handlers.NewAddressHandler(addressService)
+	NewAddressRoutes(apiRouter, addressHandler, authMiddleware)
+
 	return nil
 }
