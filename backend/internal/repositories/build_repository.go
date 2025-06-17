@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/amha-mersha/sanqa-suq/internal/database"
 	errs "github.com/amha-mersha/sanqa-suq/internal/errors"
@@ -347,4 +348,78 @@ func (r *BuildRepository) UpdateBuild(ctx context.Context, buildID string, userI
 	}
 
 	return &result, nil
+}
+
+func (r *BuildRepository) GetCompatibleProducts(ctx context.Context, categoryID int, selectedItems []int) ([]models.CompatibleProduct, error) {
+	query := `
+		WITH selected_specs AS (
+			SELECT DISTINCT ps.spec_name, ps.spec_value
+			FROM product_specifications ps
+			WHERE ps.product_id = ANY($1)
+		),
+		compatible_products AS (
+			SELECT p.product_id, p.name, p.price, p.description,
+				   b.name as brand_name, c.name as category_name
+			FROM products p
+			JOIN brands b ON p.brand_id = b.brand_id
+			JOIN categories c ON p.category_id = c.category_id
+			WHERE p.category_id = $2
+			AND NOT EXISTS (
+				-- Check for any incompatible rules
+				SELECT 1
+				FROM compatibility_rules cr
+				JOIN product_specifications ps ON cr.product_id = ps.product_id AND cr.spec_id = ps.spec_name
+				WHERE cr.product_id = p.product_id
+				AND cr.spec_value != 'ANY'
+				AND NOT EXISTS (
+					-- Verify selected components meet the rule
+					SELECT 1
+					FROM selected_specs ss
+					WHERE ss.spec_name = ps.spec_name
+					AND ss.spec_value = cr.spec_value
+				)
+			)
+		)
+		SELECT cp.*, 
+			   jsonb_object_agg(ps.spec_name, ps.spec_value) as specs
+		FROM compatible_products cp
+		LEFT JOIN product_specifications ps ON cp.product_id = ps.product_id
+		GROUP BY cp.product_id, cp.name, cp.price, cp.description, cp.brand_name, cp.category_name
+		ORDER BY cp.price ASC`
+
+	rows, err := r.DB.Pool.Query(ctx, query, selectedItems, categoryID)
+	if err != nil {
+		return nil, errs.InternalError("failed to fetch compatible products", err)
+	}
+	defer rows.Close()
+
+	var products []models.CompatibleProduct
+	for rows.Next() {
+		var product models.CompatibleProduct
+		var specsJSON []byte
+		if err := rows.Scan(
+			&product.ProductID,
+			&product.ProductName,
+			&product.Price,
+			&product.Description,
+			&product.BrandName,
+			&product.CategoryName,
+			&specsJSON,
+		); err != nil {
+			return nil, errs.InternalError("failed to scan compatible product", err)
+		}
+
+		// Parse specs JSON into map
+		if err := json.Unmarshal(specsJSON, &product.Specs); err != nil {
+			return nil, errs.InternalError("failed to parse product specs", err)
+		}
+
+		products = append(products, product)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, errs.InternalError("error iterating compatible products", err)
+	}
+
+	return products, nil
 }

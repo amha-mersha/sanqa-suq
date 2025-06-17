@@ -143,3 +143,26 @@ func (s *BuildService) UpdateBuild(ctx context.Context, buildID string, userID s
 
 	return response, nil
 }
+
+func (s *BuildService) GetCompatibleProducts(ctx context.Context, categoryID int, selectedItems []int) ([]dtos.CompatibleProductDTO, error) {
+	products, err := s.buildRepo.GetCompatibleProducts(ctx, categoryID, selectedItems)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert model to DTO
+	response := make([]dtos.CompatibleProductDTO, len(products))
+	for i, product := range products {
+		response[i] = dtos.CompatibleProductDTO{
+			ProductID:    product.ProductID,
+			ProductName:  product.ProductName,
+			Price:        product.Price,
+			Description:  product.Description,
+			BrandName:    product.BrandName,
+			CategoryName: product.CategoryName,
+			Specs:        product.Specs,
+		}
+	}
+
+	return response, nil
+}

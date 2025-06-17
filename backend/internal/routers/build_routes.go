@@ -12,4 +12,5 @@ func NewBuildRoutes(router *gin.RouterGroup, buildHandler *handlers.BuildHandler
 	builds.GET("", authMiddleware.AuthMiddleware(), buildHandler.GetUserBuilds)
 	builds.GET("/:id", authMiddleware.AuthMiddleware(), buildHandler.GetBuildByID)
 	builds.PUT("/:id", authMiddleware.AuthMiddleware(), buildHandler.UpdateBuild)
+	builds.POST("/compatible", authMiddleware.AuthMiddleware(), buildHandler.GetCompatibleProducts)
 }
